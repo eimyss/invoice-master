@@ -9,6 +9,8 @@ import {
 } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
+import AddClientPage from "../features/clients/AddClientPage"; // Import Add page
+import EditClientPage from "../features/clients/EditClientPage"; // Import Edit page
 // --- Layouts & Pages ---
 // Ensure these paths are correct based on your project structure
 import Layout from "../components/Layout";
@@ -179,46 +181,39 @@ const AppRouter = () => {
   console.log("AppRouter: Rendering.");
   return (
     <BrowserRouter>
-      {/* You could potentially add logging here too, e.g., using a custom hook with useLocation */}
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        {/* Protected Routes - Rendered within the main Layout */}
+
+        {/* Protected Routes */}
         <Route
           path="/"
           element={
             <ProtectedRoute>
-              <Layout /> {/* Main application layout wraps protected pages */}
+              <Layout />
             </ProtectedRoute>
           }
         >
-          {/* Child routes are rendered into the Layout's <Outlet> */}
-          {/* Index route defaults to Dashboard when path is exactly "/" */}
           <Route index element={<DashboardPage />} />
-          {/* Explicit dashboard route */}
           <Route path="dashboard" element={<DashboardPage />} />
-          {/* Client routes */}
+          {/* Client Routes */}
           <Route path="clients" element={<ClientListPage />} />
-          {/* TODO: Add Client Detail/Edit routes, e.g., path="clients/:clientId" */}
-          {/* TODO: Add routes for Projects */}
+          <Route path="clients/new" element={<AddClientPage />} />{" "}
+          {/* Add New Route */}
+          <Route
+            path="clients/:clientId/edit"
+            element={<EditClientPage />}
+          />{" "}
+          {/* Edit Route */}
+          {/* Optional Detail Route: <Route path="clients/:clientId" element={<ClientDetailPage />} /> */}
+          {/* Other feature routes */}
           {/* <Route path="projects" element={<ProjectListPage />} /> */}
-          {/* TODO: Add routes for Invoices */}
           {/* <Route path="invoices" element={<InvoiceListPage />} /> */}
+        </Route>
 
-          {/* Add other protected routes here */}
-        </Route>{" "}
-        {/* End of protected routes */}
-        {/* Catch-all for 404 Not Found */}
-        {/* TODO: Create a proper NotFound page component */}
-        <Route
-          path="*"
-          element={
-            <div className="flex justify-center items-center h-screen">
-              <h1 className="text-2xl">404 - Page Not Found</h1>
-            </div>
-          }
-        />
+        {/* 404 */}
+        <Route path="*" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>
   );
