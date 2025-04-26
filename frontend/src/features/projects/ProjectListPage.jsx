@@ -56,9 +56,9 @@ const ProjectTable = ({ projects, onDelete, isLoadingDelete }) => {
               {/* TODO: Fetch and display Client Name instead of ID */}
               <td
                 className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell truncate"
-                title={project.client_id}
+                title={project.client_name}
               >
-                {project.client_id.substring(0, 8)}...
+                {project.client_name}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell capitalize">
                 {project.status}
@@ -153,7 +153,7 @@ function ProjectListPage() {
             type="search"
             placeholder="Search projects..."
             onChange={handleSearchChange}
-            className="block w-full pl-10 ..."
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           />
         </div>
         <Link to="/projects/new" className="w-full sm:w-auto inline-flex ...">

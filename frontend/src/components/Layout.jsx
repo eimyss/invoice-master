@@ -120,21 +120,28 @@ const Layout = () => {
     <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
       <div className="w-64 bg-white dark:bg-gray-800 shadow-lg flex flex-col border-r border-gray-200 dark:border-gray-700">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center h-16 flex-shrink-0">
+          {" "}
+          {/* Fixed height */}
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 truncate">
             Rechnung Meister
           </h1>
           <ThemeToggle />
         </div>
-        <nav className="flex-1 px-2 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
           {navigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
               end={item.href === "/"}
               className={({ isActive }) =>
-                `group ... ${isActive ? "active-styles" : "default-styles"}`
-              } // Simplified for brevity
+                `group flex items-center px-3 py-2.5 text-sm font-medium rounded-md transition-colors duration-150 ease-in-out ${
+                  // Adjusted padding
+                  isActive
+                    ? "bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200 shadow-sm" // More subtle active state, added shadow
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/50" // Softer hover
+                }`
+              }
             >
               {(
                 { isActive }, // Function as child for icon styling

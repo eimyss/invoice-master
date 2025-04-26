@@ -90,9 +90,13 @@ const StatCard = ({ title, value, icon: Icon, changeData }) => (
 );
 
 const DashboardPage = () => {
-  const { user } = useAuth(); // Get user info if needed
+  const { userInfo } = useAuth(); // Get user info if needed
   const [calendarDate, setCalendarDate] = useState(new Date()); // State for calendar
 
+  const displayUsername = userInfo
+    ? userInfo.name || userInfo.email || "User"
+    : "Loading User...";
+  console.log("Layout: Displaying username as:", displayUsername);
   const hoursChange = calculateChange(
     currentMonthStats.hours,
     previousMonthStats.hours,
@@ -141,8 +145,7 @@ const DashboardPage = () => {
         Dashboard
       </h1>
       <p className="text-gray-600 dark:text-gray-400">
-        Welcome back, {user?.name || user?.email || "User"}! Here's your
-        overview.
+        Welcome back {displayUsername}! Here's your overview. overview.
       </p>
 
       {/* Stat Cards Grid */}
@@ -217,7 +220,9 @@ const DashboardPage = () => {
             // locale="de-DE" // Optional: Set locale if needed
           />
           {/* Optional: Display selected date or events for the date */}
-          {/* <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">Selected: {calendarDate.toLocaleDateString('de-DE')}</p> */}
+          <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            Selected: {calendarDate.toLocaleDateString("de-DE")}
+          </p>
         </div>
       </div>
 

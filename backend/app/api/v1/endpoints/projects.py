@@ -43,7 +43,7 @@ async def create_project_endpoint(
         raise HTTPException(status_code=500, detail="Project creation failed.")
 
 
-@router.get("/", response_model=List[Project])
+@router.get("/", response_model=List[dict])  # Or keep as dict for now
 async def read_projects_endpoint(
     *,
     db: Database,
@@ -62,7 +62,7 @@ async def read_projects_endpoint(
     logger.info(
         f"User {user_id} fetching projects. Skip: {skip}, Limit: {limit}, Search: '{search}', ClientID: {client_id}"
     )
-    projects = await crud_project.get_multi_by_owner(
+    projects_with_clients = await crud_project.get_multi_with_client_info(
         db=db,
         user_id=user_id,
         skip=skip,
@@ -70,7 +70,7 @@ async def read_projects_endpoint(
         search=search,
         client_id=client_id,
     )
-    return projects
+    return projects_with_clients
 
 
 @router.get("/{project_id}", response_model=Project)
