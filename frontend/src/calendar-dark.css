@@ -1,0 +1,71 @@
+/* frontend/src/calendar-dark.css */
+
+/* General overrides for dark theme */
+.react-calendar__tile--now {
+  @apply !bg-blue-800 !text-blue-100; /* Today's date */
+}
+
+.react-calendar__tile--active {
+  @apply !bg-blue-600 !text-white; /* Selected date */
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  @apply !bg-gray-600; /* Hover/focus on enabled dates */
+}
+
+/* Style for tiles with events */
+.react-calendar__tile.has-event abbr {
+  @apply relative;
+}
+.react-calendar__tile.has-event abbr::after {
+  content: "";
+  @apply absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-green-400 rounded-full;
+}
+.react-calendar__tile.has-invoice abbr::after {
+  @apply !bg-purple-400; /* Different color for invoice events */
+}
+
+/* Basic dark theme adaptation for react-calendar - Adjust as needed */
+.dark .react-calendar {
+  @apply !bg-gray-800 !border-gray-700 !text-gray-200;
+}
+
+.dark .react-calendar__navigation button {
+  @apply !bg-gray-700 !text-gray-200;
+}
+
+.dark .react-calendar__navigation button:enabled:hover,
+.dark .react-calendar__navigation button:enabled:focus {
+  @apply !bg-gray-600;
+}
+
+.dark .react-calendar__month-view__weekdays__weekday {
+  @apply !text-gray-400;
+}
+
+.dark .react-calendar__month-view__days__day--neighboringMonth {
+  @apply !text-gray-500; /* Dim days from other months */
+}
+
+.dark .react-calendar__tile {
+  @apply !text-gray-200;
+}
+
+.dark .react-calendar__tile:disabled {
+  @apply !bg-gray-700 !text-gray-500; /* Disabled dates */
+}
+
+/* Ensure the override styles for today/active/hover work in dark mode */
+.dark .react-calendar__tile--now {
+  @apply !bg-blue-800 !text-blue-100;
+}
+
+.dark .react-calendar__tile--active {
+  @apply !bg-blue-600 !text-white;
+}
+
+.dark .react-calendar__tile:enabled:hover,
+.dark .react-calendar__tile:enabled:focus {
+  @apply !bg-gray-600;
+}

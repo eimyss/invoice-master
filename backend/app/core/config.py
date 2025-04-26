@@ -1,35 +1,32 @@
 # backend/app/core/config.py
 import os
-import logging  # Import logging
+import logging
 from pydantic import AnyHttpUrl, EmailStr, validator
 from pydantic_settings import BaseSettings
 from typing import List, Union, Optional
 import json
-# No need for python-dotenv explicitly here, pydantic-settings handles it
 
-logger = logging.getLogger(__name__)  # Get logger instance
+logger = logging.getLogger(__name__)
 
 # --- Determine which .env file to load ---
-# Define the environment variable name to look for
 ENV_VAR_FOR_ENV_FILE = "APP_ENV_FILE"
-# Define the default file if the environment variable is not set
-DEFAULT_ENV_FILE = ".env"  # Or maybe '.env.local' if that's your usual default
+DEFAULT_ENV_FILE = ".env.local"  # Changed default for convenience
 
-# Get the desired .env file path from the environment variable
 env_file_path = os.getenv(ENV_VAR_FOR_ENV_FILE, DEFAULT_ENV_FILE)
 
-# Check if the specified file exists (optional but helpful for debugging)
 if not os.path.exists(env_file_path):
     logger.warning(
-        f"Specified environment file '{env_file_path}' not found. "
-        f"Falling back to default loading behavior (might use '.env' if present, or only env vars)."
+        f"Specified environment file '{env_file_path}' not found. Trying '.env' or system vars."
     )
-    # You could force it to use the default here if desired:
-    # if not os.path.exists(DEFAULT_ENV_FILE):
-    #    logger.warning(f"Default environment file '{DEFAULT_ENV_FILE}' also not found.")
-    #    env_file_path = None # Let pydantic-settings use only system env vars
-    # else:
-    #    env_file_path = DEFAULT_ENV_FILE
+    # Fallback logic if needed, e.g., try plain '.env'
+    if os.path.exists(".env"):
+        env_file_path = ".env"
+        logger.info("Falling back to loading settings from '.env'")
+    else:
+        env_file_path = None  # Let pydantic-settings use only system env vars
+        logger.info(
+            "No '.env' file found. Loading settings solely from environment variables."
+        )
 else:
     logger.info(f"Loading settings from environment file: '{env_file_path}'")
 
@@ -37,12 +34,13 @@ else:
 class Settings(BaseSettings):
     PROJECT_NAME: str = "RechnungMeister API"
     API_V1_STR: str = "/api/v1"
-
-    # Backend CORS origins
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    HTTPX_VERIFY_SSL: bool = False
+    VITE_AUTHENTIK_REDIRECT_URI: str  # Load from .env
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+        # ... (validator logic remains the same) ...
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
@@ -55,37 +53,43 @@ class Settings(BaseSettings):
                 raise ValueError("Could not parse BACKEND_CORS_ORIGINS")
         raise ValueError(v)
 
-    # MongoDB
     MONGODB_URL: str
-
-    # Security
     SECRET_KEY: str
-    ALGORITHM: str = "HS256"
+    ALGORITHM: str = "RS256"  # Changed default from HS256
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    AUTHENTIK_URL: AnyHttpUrl  # Base URL
+    AUTHENTIK_JWKS_URI: str  # JWKS endpoint (for token verification)
+    AUTHENTIK_TOKEN_URL: (
+        str  # *** ADDED: Token endpoint (for code/refresh exchange) ***
+    )
+    AUTHENTIK_ISSUER: str  # Issuer ID
+    AUTHENTIK_AUDIENCE: str  # Client ID / Audience
+    AUTHENTIK_CLIENT_SECRET: Optional[str] = None  # Optional secret
+    VITE_AUTHENTIK_REDIRECT_URI: (
+        str  # Redirect URI (must match frontend/Authentik config)
+    )
 
-    # Authentik
-    AUTHENTIK_URL: AnyHttpUrl
-    AUTHENTIK_JWKS_URI: str
-    AUTHENTIK_ISSUER: str
-    AUTHENTIK_AUDIENCE: str
+    # --- New Setting for SSL Verification ---
+    HTTPX_VERIFY_SSL: bool = True  # Default to True (verify SSL certs)
 
     class Config:
-        # Tell pydantic-settings which file(s) to load
-        # It will load the specified file if it exists.
-        # If env_file_path is None (because specified file didn't exist), it skips file loading.
         env_file = (
             env_file_path if env_file_path and os.path.exists(env_file_path) else None
         )
         env_file_encoding = "utf-8"
-        extra = "ignore"  # Ignore extra fields not defined in Settings model
+        extra = "ignore"
 
 
-# Instantiate settings - this triggers the loading based on the Config above
 settings = Settings()
 
-# Log some settings on startup (be careful not to log secrets!)
 logger.info(f"Project Name: {settings.PROJECT_NAME}")
+logger.info(f"MongoDB URL Host: {settings.MONGODB_URL.split('@')[-1].split('/')[0]}")
 logger.info(
-    f"MongoDB URL Host: {settings.MONGODB_URL.split('@')[-1].split('/')[0]}"
-)  # Example of logging part of URL safely
-
+    f"HTTPX SSL Verification Enabled: {settings.HTTPX_VERIFY_SSL}"
+)  # Log the setting status
+if not settings.HTTPX_VERIFY_SSL:
+    logger.warning("*****************************************************")
+    logger.warning("* WARNING: HTTPX SSL Verification is DISABLED!      *")
+    logger.warning("* This is insecure and should ONLY be used for      *")
+    logger.warning("* local development with trusted self-signed certs. *")
+    logger.warning("*****************************************************")

@@ -4,7 +4,19 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>Rechnung Meister</title>
+    <script>
+      // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+      // --- Force Dark Mode Default ---
+      // Remove 'dark' class ONLY if 'light' is explicitly stored in localStorage.
+      // Otherwise, add 'dark' (if 'dark' is stored or if nothing is stored).
+      if (localStorage.theme === "light") {
+        document.documentElement.classList.remove("dark");
+      } else {
+        document.documentElement.classList.add("dark"); // Default to dark
+      }
+      // -----------------------------
+    </script>
   </head>
   <body>
     <div id="root"></div>

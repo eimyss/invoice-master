@@ -26,20 +26,52 @@ oauth2_scheme_bearer = OAuth2PasswordBearer(
 
 
 # --- JWKS fetching and caching ---
-@lru_cache()  # Cache the keys to avoid fetching them on every request
+@lru_cache()
 def get_jwks() -> Dict[str, Any]:
     """Fetches JWKS keys from Authentik."""
     try:
-        # Use httpx for async requests if needed, sync is fine for caching setup
-        response = httpx.get(settings.AUTHENTIK_JWKS_URI)
+        # --- Use the setting to control SSL verification ---
+        verify_ssl = settings.HTTPX_VERIFY_SSL
+        if not verify_ssl:
+            # Add an extra warning right before the call
+            logger.warning(
+                f"Disabling SSL verification for request to {settings.AUTHENTIK_JWKS_URI}"
+            )
+
+        response = httpx.get(settings.AUTHENTIK_JWKS_URI, verify=verify_ssl)
+        # ---------------------------------------------------
+
         response.raise_for_status()  # Raise exception for bad status codes
         logger.info(f"Successfully fetched JWKS from {settings.AUTHENTIK_JWKS_URI}")
         return response.json()
     except httpx.RequestError as e:
         logger.error(f"Error fetching JWKS: {e}")
+        # Attempt to give a more specific error if it's an SSL issue and verification was enabled
+        if (
+            isinstance(e, httpx.ConnectError)
+            and "SSL" in str(e)
+            and settings.HTTPX_VERIFY_SSL
+        ):
+            logger.error(
+                "SSL verification failed. If using a self-signed cert for local dev,"
+            )
+            logger.error(
+                "consider setting HTTPX_VERIFY_SSL=False in your .env file (INSECURE!)"
+            )
+            logger.error(
+                "or configure system/docker trust store with your local CA cert (preferred)."
+            )
+
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Could not fetch authentication keys from provider.",
+            detail=f"Could not fetch authentication keys from provider. Error: {e}",
+        )
+    except Exception as e:
+        # Catch any other unexpected errors during JWKS fetch
+        logger.error(f"Unexpected error fetching JWKS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while fetching authentication keys.",
         )
 
 
@@ -66,9 +98,12 @@ async def verify_authentik_token(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        # --- Fetch JWKS (will now respect the verify_ssl setting) ---
         jwks = get_jwks()
+        # --- rest of the function remains the same ---
         unverified_header = jwt.get_unverified_header(token)
         rsa_key = {}
+        # ... (key finding logic) ...
         for key in jwks["keys"]:
             if key["kid"] == unverified_header["kid"]:
                 rsa_key = {
@@ -88,25 +123,23 @@ async def verify_authentik_token(
         payload = jwt.decode(
             token,
             rsa_key,
-            algorithms=[
-                settings.ALGORITHM
-            ],  # Usually RS256 for OIDC, check Authentik provider config
+            algorithms=[settings.ALGORITHM],  # Usually RS256
             audience=settings.AUTHENTIK_AUDIENCE,
             issuer=settings.AUTHENTIK_ISSUER,
         )
-        # 'sub' claim is usually the user ID
         user_id: str = payload.get("sub")
         if user_id is None:
             logger.error("Token payload missing 'sub' claim")
             raise credentials_exception
 
-        # You can map payload to TokenData or just return the payload dict
-        # token_data = TokenData(**payload)
-
         logger.debug(f"Token successfully validated for user: {user_id}")
-        return payload  # Return the full payload
+        return payload
 
+    except HTTPException as e:
+        # Re-raise HTTPExceptions (like 503 from get_jwks failure) directly
+        raise e
     except jwt.ExpiredSignatureError:
+        # ... (specific JWT error handling) ...
         logger.warning("Token has expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -124,8 +157,9 @@ async def verify_authentik_token(
         logger.error(f"JWTError during token validation: {e}")
         raise credentials_exception
     except Exception as e:
-        # Catch unexpected errors during validation
-        logger.error(f"Unexpected error during token validation: {e}")
+        logger.error(
+            f"Unexpected error during token validation: {e}", exc_info=True
+        )  # Log traceback
         raise credentials_exception
 
 

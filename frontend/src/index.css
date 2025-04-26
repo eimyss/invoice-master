@@ -1,8 +1,28 @@
+/* frontend/src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Add any custom base styles here */
-body {
-  @apply bg-gray-100 text-gray-900 antialiased;
+@layer base {
+  html {
+    @apply h-full;
+  }
+
+  body {
+    @apply h-full antialiased font-sans;
+
+    /* Light Mode Defaults */
+    @apply bg-gray-100 text-gray-900;
+
+    /* Dark Mode Defaults */
+    @apply dark:bg-gray-900 dark:text-gray-200;
+  }
+
+  /* Optional: Improve focus rings for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-900;
+  }
 }
+
+/* Make sure your calendar overrides are still imported or included */
+/* @import './calendar-dark.css'; /* If using @import */
