@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:6.0 # Use a specific version
+    container_name: rechnung_mongo
+    ports:
+      - "27017:27017" # Expose only if needed for direct access/debugging
+    volumes:
+      - mongo_data:/data/db
+    # Add environment variables for user/pass in production if needed
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: example
+    networks:
+      - rechnung_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rechnung_backend
+    env_file:
+      - ./backend/.env # Load backend environment variables
+    volumes:
+      - ./backend/app:/app/app # Mount code for development hot-reloading
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    networks:
+      - rechnung_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # Use reload for dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rechnung_frontend
+    # env_file: # Only if frontend needs runtime env vars different from build time
+    #   - ./frontend/.env
+    ports:
+      - "5173:80" # Map host 5173 (Vite default dev port) to container 80 (Nginx)
+    depends_on:
+      - backend
+    networks:
+      - rechnung_network
+    # Volumes for development (optional, Vite HMR inside container can be tricky):
+    # volumes:
+    #   - ./frontend/src:/app/src
+
+networks:
+  rechnung_network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+    driver: local
