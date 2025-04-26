@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api import deps
 from app.models.client import Client, ClientCreate, ClientUpdate  # Use correct schemas
-from app.crud import crud_client
+from app.crud.crud_client import crud_client
 import logging
 
 logger = logging.getLogger(__name__)

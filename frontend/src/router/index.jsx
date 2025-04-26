@@ -17,6 +17,8 @@ import Layout from "../components/Layout";
 import DashboardPage from "../pages/DashboardPage";
 import LoginPage from "../pages/LoginPage";
 import ClientListPage from "../features/clients/ClientListPage";
+import ProjectListPage from "../features/projects/ProjectListPage";
+import AddProjectPage from "../features/projects/AddProjectPage";
 // Import other pages as needed
 // import ProjectListPage from '../features/projects/ProjectListPage';
 // import InvoiceListPage from '../features/invoices/InvoiceListPage';
@@ -205,6 +207,8 @@ const AppRouter = () => {
             path="clients/:clientId/edit"
             element={<EditClientPage />}
           />{" "}
+          <Route path="projects" element={<ProjectListPage />} />
+          <Route path="projects/new" element={<AddProjectPage />} />{" "}
           {/* Edit Route */}
           {/* Optional Detail Route: <Route path="clients/:clientId" element={<ClientDetailPage />} /> */}
           {/* Other feature routes */}

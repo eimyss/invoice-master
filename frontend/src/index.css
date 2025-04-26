@@ -18,6 +18,19 @@
     @apply dark:bg-gray-900 dark:text-gray-200;
   }
 
+  @keyframes modal-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .animate-modal-enter {
+    animation: modal-enter 0.3s ease-out forwards;
+  }
   /* Optional: Improve focus rings for accessibility */
   *:focus-visible {
     @apply outline-none ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-900;
