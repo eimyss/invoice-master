@@ -5,6 +5,7 @@ import {
   ArrowLeftOnRectangleIcon,
   UserCircleIcon,
   HomeIcon,
+  BanknotesIcon,
   BriefcaseIcon,
   UsersIcon,
   DocumentTextIcon,
@@ -84,6 +85,7 @@ const Layout = () => {
     { name: "Clients", href: "/clients", icon: UsersIcon },
     { name: "Invoices", href: "/invoices", icon: DocumentTextIcon },
     { name: "Projects", href: "/projects", icon: BriefcaseIcon },
+    { name: "Work Items", href: "/workItems", icon: BanknotesIcon },
   ];
 
   // --- Explicit Loading/Auth Check ---

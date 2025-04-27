@@ -2,22 +2,22 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createProject } from "../../services/projectService";
+import { createWorkItem } from "../../services/workItemService";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import ProjectForm from "./ProjectForm";
+import WorkItemForm from "./WorkItemForm";
 
-const AddProjectPage = () => {
+const AddWorkItemPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const {
-    mutate: addProjectMutate,
+    mutate: addWorkItemMutate,
     isLoading,
     error,
   } = useMutation({
-    mutationFn: createProject,
-    onSuccess: (newProject) => {
-      console.log("Project created:", newProject);
+    mutationFn: createWorkItem,
+    onSuccess: (newWorkItem) => {
+      console.log("WorkItem created:", newWorkItem);
       // Invalidate client list cache to show the new client
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       // Optionally pre-populate cache for the new client's detail view if needed
@@ -38,7 +38,7 @@ const AddProjectPage = () => {
     // Otherwise, onSuccess/onError handle the follow-up actions
 
     console.log("Submitting new client data:", data); // Optional: Log the data being submitted
-    addProjectMutate(data);
+    addWorkItemMutate(data);
   };
 
   return (
@@ -68,7 +68,7 @@ const AddProjectPage = () => {
       )}
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-        <ProjectForm
+        <WorkItemForm
           onSubmit={handleFormSubmit}
           isLoading={isLoading}
           submitButtonText="Create Client"
@@ -78,4 +78,4 @@ const AddProjectPage = () => {
   );
 };
 
-export default AddProjectPage;
+export default AddWorkItemPage;

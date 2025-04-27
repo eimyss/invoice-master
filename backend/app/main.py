@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 import logging
 # from pydantic_settings import BaseSettings
 
+
+from fastapi.openapi.utils import get_openapi
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.core.db import connect_to_mongo, close_mongo_connection
@@ -52,6 +54,26 @@ else:
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="Custom title",
+        version="2.5.0",
+        summary="This is a very custom OpenAPI schema",
+        description="Here's a longer description of the custom **OpenAPI** schema",
+        routes=app.routes,
+    )
+    openapi_schema["info"]["x-logo"] = {
+        "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
+    }
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 @app.get("/", tags=["Root"])

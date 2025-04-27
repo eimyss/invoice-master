@@ -1,13 +1,14 @@
 from fastapi import APIRouter
 
 # Import endpoint routers
-from .endpoints import clients, auth, projects  # Import projects router
+from .endpoints import clients, auth, projects, workItems
 # Import other endpoint modules here (e.g., projects, invoices)
 
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(clients.router, prefix="/clients", tags=["Clients"])
+api_router.include_router(workItems.router, prefix="/workItems", tags=["WorkItems"])
 api_router.include_router(
     projects.router, prefix="/projects", tags=["Projects"]
 )  # Add projects

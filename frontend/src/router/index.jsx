@@ -19,6 +19,7 @@ import LoginPage from "../pages/LoginPage";
 import ClientListPage from "../features/clients/ClientListPage";
 import ProjectListPage from "../features/projects/ProjectListPage";
 import AddProjectPage from "../features/projects/AddProjectPage";
+import WorkItemListPage from "../features/workItems/WorkItemListPage";
 // Import other pages as needed
 // import ProjectListPage from '../features/projects/ProjectListPage';
 // import InvoiceListPage from '../features/invoices/InvoiceListPage';
@@ -210,6 +211,7 @@ const AppRouter = () => {
           <Route path="projects" element={<ProjectListPage />} />
           <Route path="projects/new" element={<AddProjectPage />} />{" "}
           {/* Edit Route */}
+          <Route path="workItems" element={<WorkItemListPage />} />
           {/* Optional Detail Route: <Route path="clients/:clientId" element={<ClientDetailPage />} /> */}
           {/* Other feature routes */}
           {/* <Route path="projects" element={<ProjectListPage />} /> */}
