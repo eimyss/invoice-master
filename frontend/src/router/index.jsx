@@ -20,6 +20,7 @@ import ClientListPage from "../features/clients/ClientListPage";
 import ProjectListPage from "../features/projects/ProjectListPage";
 import AddProjectPage from "../features/projects/AddProjectPage";
 import WorkItemListPage from "../features/workItems/WorkItemListPage";
+import AddWorkItemPage from "../features/workItems/AddWorkItemPage";
 // Import other pages as needed
 // import ProjectListPage from '../features/projects/ProjectListPage';
 // import InvoiceListPage from '../features/invoices/InvoiceListPage';
@@ -212,6 +213,7 @@ const AppRouter = () => {
           <Route path="projects/new" element={<AddProjectPage />} />{" "}
           {/* Edit Route */}
           <Route path="workItems" element={<WorkItemListPage />} />
+          <Route path="workItems/new" element={<AddWorkItemPage />} />
           {/* Optional Detail Route: <Route path="clients/:clientId" element={<ClientDetailPage />} /> */}
           {/* Other feature routes */}
           {/* <Route path="projects" element={<ProjectListPage />} /> */}

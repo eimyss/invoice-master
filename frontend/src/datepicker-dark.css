@@ -1,0 +1,95 @@
+/* frontend/src/datepicker-dark.css */
+
+/* Dark mode overrides for the calendar popup */
+.dark .react-datepicker {
+  @apply !bg-gray-800 !border-gray-700 !text-gray-200;
+  font-family: inherit; /* Inherit font */
+}
+
+.dark .react-datepicker__header {
+  @apply !bg-gray-900 !border-b-gray-700;
+}
+
+.dark .react-datepicker__current-month,
+.dark .react-datepicker-time__header,
+.dark .react-datepicker-year-header {
+  @apply !text-gray-100;
+}
+
+.dark .react-datepicker__day-name,
+.dark .react-datepicker__day,
+.dark .react-datepicker__time-name {
+  @apply !text-gray-300;
+}
+
+/* Day Hover/Focus */
+.dark .react-datepicker__day:hover,
+.dark .react-datepicker__month-text:hover,
+.dark .react-datepicker__quarter-text:hover,
+.dark .react-datepicker__year-text:hover {
+  @apply !bg-gray-700 rounded-md;
+}
+
+/* Day Disabled */
+.dark .react-datepicker__day--disabled,
+.dark .react-datepicker__month-text--disabled,
+.dark .react-datepicker__quarter-text--disabled,
+.dark .react-datepicker__year-text--disabled {
+  @apply !text-gray-600 cursor-not-allowed;
+}
+.dark .react-datepicker__day--disabled:hover,
+.dark .react-datepicker__month-text--disabled:hover,
+.dark .react-datepicker__quarter-text--disabled:hover,
+.dark .react-datepicker__year-text--disabled:hover {
+  @apply !bg-transparent;
+}
+
+/* Selected Day */
+.dark .react-datepicker__day--selected,
+.dark .react-datepicker__day--in-selecting-range,
+.dark .react-datepicker__day--in-range,
+.dark .react-datepicker__month-text--selected,
+.dark .react-datepicker__month-text--in-selecting-range,
+.dark .react-datepicker__month-text--in-range,
+.dark .react-datepicker__quarter-text--selected,
+.dark .react-datepicker__quarter-text--in-selecting-range,
+.dark .react-datepicker__quarter-text--in-range,
+.dark .react-datepicker__year-text--selected,
+.dark .react-datepicker__year-text--in-selecting-range,
+.dark .react-datepicker__year-text--in-range {
+  @apply !bg-blue-600 !text-white rounded-md;
+}
+.dark .react-datepicker__day--selected:hover, /* Keep hover consistent */
+.dark .react-datepicker__month-text--selected:hover,
+.dark .react-datepicker__quarter-text--selected:hover,
+.dark .react-datepicker__year-text--selected:hover {
+  @apply !bg-blue-700;
+}
+
+/* Today's Date */
+.dark .react-datepicker__day--today {
+  @apply font-bold !text-blue-400;
+}
+.dark .react-datepicker__day--keyboard-selected {
+  /* Accessibility focus */
+  @apply ring-2 ring-blue-500 ring-offset-1 ring-offset-gray-800 rounded-md;
+}
+
+/* Navigation Arrows */
+.dark .react-datepicker__navigation-icon::before {
+  @apply !border-gray-400; /* Arrow color */
+}
+.dark
+  .react-datepicker__navigation:hover
+  .react-datepicker__navigation-icon::before {
+  @apply !border-gray-200;
+}
+
+/* Optional: Time input */
+.dark
+  .react-datepicker__input-time-container
+  .react-datepicker-time__input-container
+  .react-datepicker-time__input
+  input {
+  @apply !bg-gray-700 !text-gray-100 !border-gray-600;
+}

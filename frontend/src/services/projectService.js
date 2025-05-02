@@ -3,6 +3,7 @@ import apiClient from "../lib/apiClient";
 
 const API_URL = "/projects";
 
+const RATE_API_URL = "/projects/{id}/rates";
 // Fetch Projects
 export const getProjects = async ({
   searchTerm = "",
@@ -27,6 +28,12 @@ export const getProjects = async ({
   return response.data;
 };
 
+export const getRatesByProjectId = async (projectId) => {
+  if (!projectId) throw new Error("Project ID is required.");
+  console.log("Fetching Rates project by ID:", projectId);
+  const response = await apiClient.get(`${API_URL}/${projectId}`);
+  return response.data.rates;
+};
 // Fetch Single Project by ID
 export const getProjectById = async (projectId) => {
   if (!projectId) throw new Error("Project ID is required.");

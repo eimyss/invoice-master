@@ -23,7 +23,7 @@ const AddWorkItemPage = () => {
       // Optionally pre-populate cache for the new client's detail view if needed
       // queryClient.setQueryData(['client', newClient.id], newClient);
       // Navigate back to the client list (or to the new client's detail page)
-      navigate("/projects");
+      navigate("/workItems");
       // TODO: Show success notification
     },
     onError: (err) => {

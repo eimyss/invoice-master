@@ -10,7 +10,6 @@ class ItemStatus:
     CREATED = "created"
     DISABLED = "disabled"
     CANCELED = "canceled"
-    CREATED = "created"
     PROCESSED = "processed"
     SENT = "sent"
 
@@ -28,7 +27,6 @@ class PaymentItems(BaseModel):
 # Base properties for Work Item
 class WorkItemBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=150, examples=["Website Relaunch"])
-    client_id: UUID = Field(..., description="ID of the client this project belongs to")
 
     invoice_id: UUID = Field(
         ..., description="ID of the client this project belongs to"

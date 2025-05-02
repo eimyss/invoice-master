@@ -36,6 +36,11 @@ const ProjectForm = ({
     initialData?.client_name || "",
   ); // Need initial client name for display on edit
 
+  const clientPickerColumns = [
+    { header: "Client Name", accessor: "name" },
+    { header: "Email", accessor: "email", options: { hiddenSm: true } }, // Hide email on small screens
+    { header: "City", accessor: "address_city", options: { hiddenMd: true } }, // Hide city on small/medium
+  ];
   const {
     register,
     handleSubmit,
@@ -127,23 +132,24 @@ const ProjectForm = ({
 
       {/* --- Client Picker --- */}
       <Controller
-        name="client_id" // Name must match the schema field
+        name="client_id"
         control={control}
-        render={(
-          { field }, // field contains value, onChange etc. but we manage value via state/setValue
-        ) => (
+        render={({ field }) => (
           <EntityPicker
             label="Client"
             id="client_id_picker"
-            selectedValue={selectedClientId} // Controlled by state
-            selectedDisplayValue={selectedClientName} // Controlled by state
-            onSelect={handleClientSelect} // Our handler updates state & form value
+            selectedValue={selectedClientId}
+            selectedDisplayValue={selectedClientName}
+            onSelect={handleClientSelect}
             fetchFn={fetchClientsForPicker}
-            queryKeyBase="clients-picker" // Unique key for this picker instance
+            queryKeyBase="clients-picker"
+            // *** Pass the columns config ***
+            columns={clientPickerColumns}
+            // *****************************
             modalTitle="Select Client"
             searchPlaceholder="Search clients by name..."
             required
-            error={errors.client_id} // Display validation error for client_id
+            error={errors.client_id}
           />
         )}
       />

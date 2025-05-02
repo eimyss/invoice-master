@@ -9,6 +9,7 @@ export const SelectField = ({
   error,
   required,
   children,
+  readOnly = false,
   className = "",
   ...rest
 }) => (
@@ -23,6 +24,7 @@ export const SelectField = ({
       id={id}
       {...register}
       {...rest}
+      disabled={readOnly}
       className={`block w-full px-3 py-2 border ${error ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed appearance-none`} // Added appearance-none for custom arrow styling later if needed
       aria-invalid={error ? "true" : "false"}
     >
