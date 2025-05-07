@@ -10,7 +10,7 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { debounce } from "lodash";
-
+import { Checkbox } from "../../components/ui/Checkbox";
 // --- Reusable WorkItem Table Component --- (Move to ui if used elsewhere)
 const WorkItemTable = ({ workItems, onDelete, isLoadingDelete }) => {
   if (!workItems || workItems.length === 0) {
@@ -29,10 +29,13 @@ const WorkItemTable = ({ workItems, onDelete, isLoadingDelete }) => {
               Name
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
-              Client ID (TEMP)
+              Project Name
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
               Status
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
+              Invoiced?
             </th>
             <th className="relative px-6 py-3">
               <span className="sr-only">Actions</span>
@@ -47,7 +50,7 @@ const WorkItemTable = ({ workItems, onDelete, isLoadingDelete }) => {
             >
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <Link
-                  to={`/workItems/${workItem.id}/edit`}
+                  to={`/workItems/${workItem._id}/edit`}
                   className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                 >
                   {workItem.name}
@@ -56,12 +59,24 @@ const WorkItemTable = ({ workItems, onDelete, isLoadingDelete }) => {
               {/* TODO: Fetch and display Client Name instead of ID */}
               <td
                 className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell truncate"
-                title={workItem.client_name}
+                title={workItem.project_name}
               >
-                {workItem.client_name}
+                {workItem.project_name}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell capitalize">
                 {workItem.status}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell capitalize">
+                <div className="flex items-center gap-2">
+                  {workItem.is_invoiced ? "Yes" : "No"}
+                  <Checkbox
+                    id="select-all-time"
+                    label=""
+                    readOnly
+                    checked={workItem.is_invoiced}
+                    aria-label="Select all time entries"
+                  />
+                </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                 <Link

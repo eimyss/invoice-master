@@ -10,6 +10,7 @@ from app.models.workItem import (
     WorkItemCreate,
     WorkItemInDB,
     WorkItemUpdate,
+    WorkItemWithProjectName,
 )  # Use Project models
 from app.crud.crud_workItem import crud_workItem
 import logging
@@ -45,7 +46,9 @@ async def create_workItem_endpoint(
         raise HTTPException(status_code=500, detail="Work Item creation failed.")
 
 
-@router.get("/", response_model=List[WorkItemInDB])  # Or keep as dict for now
+@router.get(
+    "/", response_model=List[WorkItemWithProjectName]
+)  # Or keep as dict for now
 async def read_workItems_endpoint(
     *,
     db: Database,
@@ -72,7 +75,7 @@ async def read_workItems_endpoint(
     #       search=search,
     #       project_id=project_id,
     #    )
-    results_from_crud = await crud_workItem.get_multi_by_owner(
+    results_from_crud = await crud_workItem.get_multi_with_project_name(
         db=db,
         user_id=user_id,
         skip=skip,

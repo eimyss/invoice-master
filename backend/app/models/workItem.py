@@ -113,6 +113,20 @@ class WorkItem(WorkItemInDBBase):
     pass  # Includes all DB base fields
 
 
+class WorkItemWithProjectName(WorkItemInDBBase):  # Inherit common DB fields
+    project_name: Optional[str] = Field(
+        default=None, description="Name of the associated project"
+    )
+    # You could also add client_id here if needed from the project lookup
+    # client_id_from_project: Optional[UUID] = Field(alias="clientIdFromProject", default=None)
+
+    # Ensure config allows population by name if aliases are used elsewhere
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+    )
+
+
 # Internal DB representation
 class WorkItemInDB(WorkItemInDBBase):
     pass
