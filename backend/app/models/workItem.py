@@ -14,22 +14,29 @@ class ItemStatus:
     SENT = "sent"
 
 
-# Reusable rate structure (can be embedded or separate collection later)
-class PaymentItems(BaseModel):
-    name: str = Field(..., examples=["Development", "Consulting"])
-    descriptionInvoice: str = Field(..., examples=["Consulting Januar 2025"])
-    price_per_hour: float = Field(..., gt=0, examples=[75.0, 100.0])
-    hours: float = Field(..., gt=0, examples=[75.0, 100.0])
-    calculatedAmount: float = Field(..., gt=0, examples=[75.0, 100.0])
-    rateId: UUID = Field(..., description="Referece to the rate of the Project")
+class TimeEntry(BaseModel):
+    description: str = Field(..., max_length=100, description="Description of the rate")
+    rate_name: str = Field(
+        ..., max_length=100, description="Name of the original Rate in Project"
+    )
+    duration: float = Field(..., description="Number of hours for this item")
+    calculatedAmount: Optional[float] = Field(
+        default=None, description="Calculated amount based on other fields"
+    )
+    price_per_hour: Optional[float] = Field(
+        default=None, description="Price per hour for this item"
+    )
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Base properties for Work Item
 class WorkItemBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=150, examples=["Website Relaunch"])
-
-    invoice_id: UUID = Field(
-        ..., description="ID of the client this project belongs to"
+    invoice_id: Optional[UUID] = Field(
+        default=None,  # Make it optional by providing a default value (None)
+        description="ID of the invoice this time entry belongs to, null if not invoiced yet",  # Correct description
+        alias="invoiceId",  # Optional: Define alias if DB field name differs
     )
     is_invoiced: Optional[bool] = False
     date_from: Optional[datetime] = None
@@ -46,7 +53,7 @@ class WorkItemBase(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     # Store rates directly embedded for simplicity initially
-    rates: List[PaymentItems] = Field(
+    timeEntries: List[TimeEntry] = Field(
         default_factory=list, examples=[[{"name": "Dev", "price_per_hour": 80}]]
     )
     # Add start/end dates if needed
@@ -83,7 +90,7 @@ class WorkItemUpdate(BaseModel):
     project_id: Optional[UUID] = Field(default=None)
     description: Optional[str] = Field(default=None, max_length=5000)
     status: Optional[str] = Field(default=None)
-    rates: Optional[List[PaymentItems]] = Field(default=None)
+    timeEntries: Optional[List[TimeEntry]] = Field(default=None)
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
 

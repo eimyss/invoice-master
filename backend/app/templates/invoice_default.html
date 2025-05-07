@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Rechnung {{ invoice.invoice_number }}</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="invoice_style.css">
+    <style>
+        /* Basic inline styles for structure (better in CSS file) */
+        body { font-family: sans-serif; font-size: 10pt; }
+        .header, .footer { text-align: center; font-size: 8pt; color: grey; }
+        .invoice-details, .client-details, .your-details { margin-bottom: 20px; }
+        .addresses { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .address-block { width: 45%; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .totals { text-align: right; margin-top: 20px; }
+        .totals td { border: none; padding: 4px 0; }
+        .totals .label { font-weight: bold; padding-right: 20px; }
+    </style>
+</head>
+<body>
+    <!-- Example Header -->
+    <div class="header">
+        {{ your.name }} - {{ your.address_line1 }} - {{ your.zip_city }}
+    </div>
+
+    <h1>Rechnung</h1>
+
+    <div class="addresses">
+        <div class="address-block your-details">
+            <strong>{{ your.name }}</strong><br>
+            {{ your.address_line1 }}<br>
+            {% if your.address_line2 %}{{ your.address_line2 }}<br>{% endif %}
+            {{ your.zip_city }}<br>
+            {% if your.country %}{{ your.country }}<br>{% endif %}
+            <br>
+            {% if your.tax_id %}Steuernummer: {{ your.tax_id }}<br>{% endif %}
+            {% if your.vat_id %}USt-IdNr.: {{ your.vat_id }}<br>{% endif %}
+        </div>
+        <div class="address-block client-details">
+            <strong>An:</strong><br>
+            {{ invoice.client_snapshot.name }}<br>
+            {% if invoice.client_snapshot.contact_person %}{{ invoice.client_snapshot.contact_person }}<br>{% endif %}
+            {{ invoice.client_snapshot.address_street or '' }}<br>
+            {{ invoice.client_snapshot.address_zip or '' }} {{ invoice.client_snapshot.address_city or '' }}<br>
+            {{ invoice.client_snapshot.address_country or '' }}<br>
+             {% if invoice.client_snapshot.vat_id %}<br>USt-IdNr.: {{ invoice.client_snapshot.vat_id }}{% endif %}
+        </div>
+    </div>
+
+    <div class="invoice-details">
+        Rechnungsnummer: <strong>{{ invoice.invoice_number }}</strong><br>
+        Rechnungsdatum: {{ invoice.issue_date | date }}<br>
+        Fällig am: {{ invoice.due_date | date }}<br>
+        {% if invoice.service_date_from or invoice.service_date_to %}
+        Leistungszeitraum:
+            {% if invoice.service_date_from %}{{ invoice.service_date_from | date }}{% endif %}
+            {% if invoice.service_date_from and invoice.service_date_to %} - {% endif %}
+            {% if invoice.service_date_to %}{{ invoice.service_date_to | date }}{% endif %}
+        <br>
+        {% endif %}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Beschreibung</th>
+                <th>Menge</th>
+                <th>Einzelpreis</th>
+                <th>Betrag</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td style="text-align: right;">{{ item.quantity }}</td>
+                <td style="text-align: right;">{{ item.unit_price | currency }}</td>
+                <td style="text-align: right;">{{ item.amount | currency }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <td class="label">Zwischensumme (Netto):</td>
+            <td>{{ invoice.subtotal | currency }}</td>
+        </tr>
+        <tr>
+            <td class="label">zzgl. {{ invoice.tax_rate }}% MwSt.:</td>
+            <td>{{ invoice.tax_amount | currency }}</td>
+        </tr>
+        <tr>
+            <td class="label">Gesamtbetrag (Brutto):</td>
+            <td><strong>{{ invoice.total_amount | currency }}</strong></td>
+        </tr>
+    </table>
+
+    {% if invoice.notes %}
+    <div class="notes">
+        <strong>Anmerkungen:</strong><br>
+        <pre>{{ invoice.notes }}</pre> {# Use <pre> to preserve line breaks #}
+    </div>
+    {% endif %}
+
+    <div class="payment-details">
+        <p>Bitte überweisen Sie den Gesamtbetrag bis zum {{ invoice.due_date | date }} auf das unten angegebene Konto.</p>
+        <p>
+            <strong>Bankverbindung:</strong><br>
+            Kontoinhaber: {{ your.bank_account_holder }}<br>
+            IBAN: {{ your.bank_iban }}<br>
+            BIC: {{ your.bank_bic }}<br>
+            Bank: {{ your.bank_name }}
+        </p>
+         <p>Vielen Dank für Ihren Auftrag!</p>
+    </div>
+
+    <!-- Example Footer -->
+    <div class="footer">
+        Seite <span class="page"></span> von <span class="topage"></span> {# WeasyPrint page numbers #}
+        - Generiert am {{ current_date | date('%d.%m.%Y %H:%M:%S') }}
+    </div>
+
+</body>
+</html>

@@ -35,6 +35,14 @@ const WorkItemForm = ({
     initialData?.client_name || "Loading...",
   ); // Add state for client name
 
+  const WorkItemStatus = {
+    ACTIVE: "active",
+    CREATED: "created",
+    DISABLED: "disabled",
+    CANCELED: "canceled",
+    PROCESSED: "processed",
+    SENT: "sent",
+  };
   // --- React Hook Form Setup ---
   const {
     register,
@@ -48,6 +56,8 @@ const WorkItemForm = ({
     resolver: zodResolver(workItemSchema),
     defaultValues: {
       project_id: initialData?.project_id || "",
+      status: initialData?.status || WorkItemStatus.CREATED,
+      name: initialData?.name || "",
       date: initialData?.date ? new Date(initialData.date) : new Date(), // Default to today
       // Rename 'rates' array to 'timeEntries' and set default structure
       timeEntries:
@@ -265,6 +275,20 @@ const WorkItemForm = ({
         isClearable={false}
       />
 
+      <InputField
+        label="Name"
+        id="name"
+        register={register("name")}
+        error={errors.name}
+      />
+      <InputField
+        label="Status"
+        id="status"
+        disabled={true}
+        register={register("status")}
+        error={errors.status}
+      />
+
       {/* --- Time Entries Section --- */}
       <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 border-b dark:border-gray-600 pb-2 mb-0 col-span-full">
         Time Logs
@@ -318,11 +342,13 @@ const WorkItemForm = ({
               <InputField
                 label="Duration (hrs)"
                 id={`timeEntries.${index}.duration`}
-                register={register(`timeEntries.${index}.duration`)} // Register duration
+                register={register(`timeEntries.${index}.duration`, {
+                  valueAsNumber: true,
+                })}
                 error={errors.timeEntries?.[index]?.duration}
                 required
                 type="number"
-                step="0.01"
+                step="0.5"
                 placeholder="e.g., 1.5"
                 className="md:col-span-2"
               />

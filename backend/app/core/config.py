@@ -53,6 +53,17 @@ class Settings(BaseSettings):
                 raise ValueError("Could not parse BACKEND_CORS_ORIGINS")
         raise ValueError(v)
 
+    # invoice stuff
+    YOUR_COMPANY_NAME: str = "Your Freelancer Name/Company"
+    YOUR_ADDRESS_LINE1: str = "Your Street 123"
+    YOUR_ZIP_CITY: str = "12345 Your City"
+    YOUR_TAX_ID: Optional[str] = None  # Steuernummer
+    YOUR_VAT_ID: Optional[str] = None  # USt-IdNr.
+    YOUR_BANK_HOLDER: str = "Account Holder Name"
+    YOUR_BANK_IBAN: str = "DE12..."
+    YOUR_BANK_BIC: Optional[str] = None
+    YOUR_BANK_NAME: Optional[str] = None
+
     MONGODB_URL: str
     SECRET_KEY: str
     ALGORITHM: str = "RS256"  # Changed default from HS256

@@ -51,7 +51,7 @@ export const workItemSchema = z.object({
     .array(timeEntryLogSchema)
     .min(1, "At least one time entry log is required"),
 
-  invcoice_id: z.string().nullable(),
+  invcoice_id: z.string().optional().nullable(),
   project_id: z
     .string()
     .uuid({ message: "Valid client must be selected" })
