@@ -44,6 +44,20 @@ class CRUDWorkItem(CRUDBase[WorkItemInDB, WorkItemCreate, WorkItemUpdate]):
         logger.info(
             f"CRUDProject: Found {len(results)} projects for user {user_id} matching criteria."
         )
+        logger.info(f"results is: {results}")
+
+        try:
+            import json
+
+            log_output = json.dumps(
+                results[:5], indent=2, default=str
+            )  # Use default=str for non-serializable types like UUID/datetime
+            logger.info(log_output)
+            if len(results) > 5:
+                logger.info("... (results truncated for logging)")
+        except Exception as log_e:
+            logger.error(f"Could not serialize results for logging: {log_e}")
+            logger.info(f"Raw results list (might be large): {results}")
         return [self.model(**doc) for doc in results]
 
     # You might add other project-specific CRUD methods here,
@@ -151,6 +165,16 @@ class CRUDWorkItem(CRUDBase[WorkItemInDB, WorkItemCreate, WorkItemUpdate]):
                 # "project_status": "$project_info.status",
             }
         }
+        add_fields_stage = {
+            "$addFields": {
+                # Add fields from the joined project_info
+                "project_name": "$project_info.name",
+                "client_id": "$project_info.client_id",
+                # Add other project fields if needed
+                # "project_status": "$project_info.status",
+            }
+        }
+        pipeline.append(add_fields_stage)
         pipeline.append(project_stage)
 
         # --- Stage 6: Sorting, Skipping, Limiting ---
@@ -164,6 +188,7 @@ class CRUDWorkItem(CRUDBase[WorkItemInDB, WorkItemCreate, WorkItemUpdate]):
 
         cursor = collection.aggregate(pipeline)
         results = await cursor.to_list(length=limit)
+        logger.info(f"Result is: {results}")
         logger.info(
             f"CRUDTimeEntry Aggregation: Found {len(results)} time entries for user {user_id}"
         )

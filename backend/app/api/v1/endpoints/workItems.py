@@ -8,6 +8,7 @@ from app.api import deps
 from app.models.workItem import (
     WorkItem,
     WorkItemCreate,
+    WorkItemInDB,
     WorkItemUpdate,
 )  # Use Project models
 from app.crud.crud_workItem import crud_workItem
@@ -44,7 +45,7 @@ async def create_workItem_endpoint(
         raise HTTPException(status_code=500, detail="Work Item creation failed.")
 
 
-@router.get("/", response_model=List[dict])  # Or keep as dict for now
+@router.get("/", response_model=List[WorkItemInDB])  # Or keep as dict for now
 async def read_workItems_endpoint(
     *,
     db: Database,
@@ -63,7 +64,15 @@ async def read_workItems_endpoint(
     logger.info(
         f"User {user_id} fetching workItems. Skip: {skip}, Limit: {limit}, Search: '{search}', ProjectID: {project_id}"
     )
-    workItems_with_clients = await crud_workItem.get_multi_with_project_info(
+    # workItems_with_clients = await crud_workItem.get_multi_with_project_info(
+    #     db=db,
+    #     user_id=user_id,
+    #     skip=skip,
+    #      limit=limit,
+    #       search=search,
+    #       project_id=project_id,
+    #    )
+    results_from_crud = await crud_workItem.get_multi_by_owner(
         db=db,
         user_id=user_id,
         skip=skip,
@@ -71,7 +80,27 @@ async def read_workItems_endpoint(
         search=search,
         project_id=project_id,
     )
-    return workItems_with_clients
+    logger.info(
+        f"Data being returned from CRUD function (type: {type(results_from_crud[0]) if results_from_crud else 'empty'}):"
+    )
+    # Log differently if they are already Pydantic models
+    try:
+        import json
+
+        # Use model_dump for Pydantic V2 models
+        log_output = json.dumps(
+            [item.model_dump() for item in results_from_crud[:5]], indent=2, default=str
+        )
+        logger.info(log_output)
+        if len(results_from_crud) > 5:
+            logger.info("... (results truncated)")
+    except Exception as log_e:
+        logger.error(f"Could not serialize results for logging: {log_e}")
+        logger.info(f"Raw results list: {results_from_crud}")
+    # -----------------------------------------------------
+
+    # *** FIX: Return the list directly if CRUD already parsed it ***
+    return results_from_crud
 
 
 @router.get("/{workItem_id}", response_model=WorkItem)
