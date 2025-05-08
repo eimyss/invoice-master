@@ -12,7 +12,7 @@ from app.models.invoice import (
     InvoiceInDB,
     InvoiceEmailRequest,
 )
-from app.crud import crud_invoice  # Use Invoice CRUD
+from app.crud.crud_invoice import crud_invoice
 from app.services import pdf_generator, email_service  # Import services
 from app.core.config import settings  # For potentially getting 'your_details'
 

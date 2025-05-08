@@ -95,7 +95,7 @@ function CreateInvoicePage() {
 
   // --- Handlers ---
   const handleClientSelect = useCallback((client) => {
-    const newClientId = client?.id || "";
+    const newClientId = client?._id || "";
     setSelectedClientId(newClientId);
     setSelectedClientName(client?.name || "");
     setSelectedProjectId(""); // Reset project when client changes
@@ -104,7 +104,7 @@ function CreateInvoicePage() {
   }, []);
 
   const handleProjectSelect = useCallback((project) => {
-    const newProjectId = project?.id || "";
+    const newProjectId = project?._id || "";
     setSelectedProjectId(newProjectId);
     // setSelectedProjectIds(project ? [project.id] : []); // For multi-select later
     setSelectedTimeEntryIds(new Set()); // Clear selected entries
@@ -311,26 +311,26 @@ function CreateInvoicePage() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {timeEntries.map((entry) => (
-                    <tr key={entry.id}>
+                    <tr key={entry._id}>
                       <td className="px-4 py-2">
                         <Checkbox
-                          id={`time-entry-${entry.id}`}
+                          id={`time-entry-${entry._id}`}
                           label=""
-                          checked={selectedTimeEntryIds.has(entry.id)}
+                          checked={selectedTimeEntryIds.has(entry._id)}
                           onChange={(e) =>
-                            handleTimeEntrySelect(entry.id, e.target.checked)
+                            handleTimeEntrySelect(entry._id, e.target.checked)
                           }
                         />
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap">
-                        {formatDate(entry.date)}
+                        {formatDate(entry.created_at)}
                       </td>
                       <td className="px-4 py-2">{entry.description}</td>
                       <td className="px-4 py-2 whitespace-nowrap">
-                        {entry.rate_name}
+                        {entry.name}
                       </td>
                       <td className="px-4 py-2 text-right whitespace-nowrap">
-                        {entry.duration?.toFixed(2)} hrs
+                        {entry.timeEntries[0]?.duration?.toFixed(2)} hrs
                       </td>
                       <td className="px-4 py-2 text-right whitespace-nowrap">
                         {formatCurrency(entry.amount)}

@@ -108,7 +108,7 @@ const InvoiceTable = ({ invoices, onPrepareEmail, isLoadingEmail }) => {
                 {/* TODO: Link to Detail View */}
                 {/* <Link to={`/invoices/${invoice.id}`} title="View Details" className="p-1 text-gray-400 hover:text-blue-600"><EyeIcon className="h-5 w-5 inline"/></Link> */}
                 <a
-                  href={getInvoicePdfUrl(invoice.id)}
+                  href={getInvoicePdfUrl(invoice._id)}
                   title="Download PDF"
                   target="_blank"
                   rel="noreferrer"

@@ -18,6 +18,6 @@ export const getTimeEntries = async ({
   );
 
   console.log("Fetching time entries with params:", params);
-  const response = await apiClient.get("/time-entries", { params }); // Assuming endpoint exists
+  const response = await apiClient.get("/workItems", { params }); // Assuming endpoint exists
   return response.data;
 };

@@ -34,7 +34,7 @@ export const getInvoicePdfUrl = (invoiceId) => {
   if (!invoiceId) return "#";
   // Construct URL relative to API base (adjust if apiClient baseURL isn't setup for this)
   // Assuming apiClient.defaults.baseURL is set like 'http://host:port/api/v1'
-  const baseUrl = apiClient.defaults.baseURL.replace("/api/v1", ""); // Get root URL
+  const baseUrl = "api/v1";
   return `${baseUrl}${API_URL}/${invoiceId}/pdf`;
 };
 
