@@ -1,0 +1,3 @@
+pytest
+pytest-asyncio # For async test functions
+httpx

@@ -33,3 +33,7 @@ class TimeEntryInDB(TimeEntryBase):
 
 class TimeEntry(TimeEntryInDB):
     pass  # Includes all DB base fields
+
+
+class TimeEntryCreate(TimeEntryBase):
+    pass  # Inherits all fields

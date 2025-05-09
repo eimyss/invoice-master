@@ -7,6 +7,11 @@ import os
 from datetime import date, datetime
 from typing import Dict, Any
 
+from uuid import UUID
+from motor.motor_asyncio import AsyncIOMotorDatabase  # Need DB type hint
+from app.crud import crud_invoice  # Need CRUD to fetch/update
+from app.services import pdf_generator  # Import the actual generator function
+from app.core.config import settings  # To get your details
 from app.models.invoice import InvoiceInDB  # Import the Invoice model
 
 logger = logging.getLogger(__name__)
@@ -113,3 +118,79 @@ async def generate_invoice_pdf(
         )
         # Depending on requirements, you might raise a specific exception
         raise RuntimeError(f"PDF generation failed: {e}") from e
+
+
+async def generate_and_store_invoice_pdf(
+    db: AsyncIOMotorDatabase, invoice_id: UUID, user_id: str
+):
+    """
+    Background task to generate PDF for an invoice and store it in the DB.
+    """
+    logger.info(f"[BackgroundTask] Starting PDF generation for invoice {invoice_id}")
+    # Note: If 'db' passed from endpoint isn't usable here,
+    # you might need to establish a new connection or use a dependency injection system.
+    # For simplicity, assume 'db' is usable or call get_database() again.
+    # db = await get_database() # Example if needing new connection
+
+    try:
+        # 1. Fetch the full invoice data again
+        invoice_db = await crud_invoice.get(db=db, id=invoice_id, user_id=user_id)
+        if not invoice_db:
+            logger.error(
+                f"[BackgroundTask] Invoice {invoice_id} not found for PDF generation."
+            )
+            return  # Exit task
+
+        # 2. Check if PDF already exists (optional, prevents re-generation)
+        if invoice_db.pdf_content:
+            logger.info(
+                f"[BackgroundTask] PDF already exists for invoice {invoice_id}. Skipping generation."
+            )
+            return
+
+        # 3. Get Your Details
+        your_details = {
+            "name": settings.YOUR_COMPANY_NAME,
+            "address_line1": settings.YOUR_ADDRESS_LINE1,
+            # ... fill all details needed by the template ...
+            "zip_city": settings.YOUR_ZIP_CITY,
+            "tax_id": settings.YOUR_TAX_ID,
+            "vat_id": settings.YOUR_VAT_ID,
+            "bank_account_holder": settings.YOUR_BANK_HOLDER,
+            "bank_iban": settings.YOUR_BANK_IBAN,
+            "bank_bic": settings.YOUR_BANK_BIC,
+            "bank_name": settings.YOUR_BANK_NAME,
+        }
+
+        # 4. Generate PDF bytes
+        pdf_bytes = await pdf_generator.generate_invoice_pdf(invoice_db, your_details)
+
+        # 5. Update the Invoice in DB with PDF content
+        if pdf_bytes:
+            invoice_collection = crud_invoice.get_collection(
+                db
+            )  # Access collection via CRUD instance
+            update_result = await invoice_collection.update_one(
+                {"_id": invoice_id, "user_id": user_id},
+                {"$set": {"pdf_content": pdf_bytes, "updated_at": datetime.utcnow()}},
+            )
+            if update_result.modified_count == 1:
+                logger.info(
+                    f"[BackgroundTask] Successfully stored PDF content for invoice {invoice_id}."
+                )
+            else:
+                logger.error(
+                    f"[BackgroundTask] Failed to update invoice {invoice_id} with PDF content (modified_count={update_result.modified_count})."
+                )
+        else:
+            logger.error(
+                f"[BackgroundTask] PDF generation returned empty bytes for invoice {invoice_id}."
+            )
+
+    except Exception as e:
+        logger.error(
+            f"[BackgroundTask] Error generating/storing PDF for invoice {invoice_id}: {e}",
+            exc_info=True,
+        )
+    # finally:
+    # Close DB connection here if you opened a new one for the task

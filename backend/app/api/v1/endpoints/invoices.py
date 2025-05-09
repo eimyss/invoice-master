@@ -16,6 +16,8 @@ from app.crud.crud_invoice import crud_invoice
 from app.services import pdf_generator, email_service  # Import services
 from app.core.config import settings  # For potentially getting 'your_details'
 
+from datetime import date, datetime
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -32,7 +34,11 @@ Database = Annotated[deps.AsyncIOMotorDatabase, Depends(deps.get_db)]
     summary="Create a new Invoice from Time Entries",
 )
 async def create_invoice_endpoint(
-    *, request_body: InvoiceCreateRequest, db: Database, current_user: CurrentUser
+    *,
+    request_body: InvoiceCreateRequest,
+    db: Database,
+    current_user: CurrentUser,
+    background_tasks: BackgroundTasks,
 ):
     """
     Generates a new invoice based on selected client, projects, and time entries.
@@ -49,6 +55,15 @@ async def create_invoice_endpoint(
         # Call the custom create method in CRUD
         created_invoice_db = await crud_invoice.create_from_request(
             db=db, user_id=user_id, request=request_body
+        )
+        background_tasks.add_task(
+            generate_and_store_invoice_pdf,
+            db=db,  # Pass DB connection if task needs it (or create new one)
+            invoice_id=created_invoice_db.id,
+            user_id=user_id,  # Pass user_id for fetching your_details if needed
+        )
+        logger.info(
+            f"Scheduled PDF generation task for invoice {created_invoice_db.invoice_number}"
         )
         # Return the Pydantic model for the created invoice
         return Invoice(**created_invoice_db.model_dump())
@@ -106,62 +121,112 @@ async def read_invoice_by_id_endpoint(
 # --- Endpoint to Download Invoice PDF ---
 @router.get(
     "/{invoice_id}/pdf",
-    summary="Download Invoice as PDF",
-    response_description="The invoice PDF file",
-    # Define response content type
-    responses={
-        200: {
-            "content": {"application/pdf": {}},
-            "description": "Invoice PDF file.",
-        },
-        404: {"description": "Invoice not found"},
-    },
+    # ... (summary, response_description, responses as before) ...
 )
 async def download_invoice_pdf_endpoint(
-    *, invoice_id: UUID, db: Database, current_user: CurrentUser
+    *,
+    invoice_id: UUID,
+    db: Database,
+    current_user: CurrentUser,
+    background_tasks: BackgroundTasks,
 ):
-    """Generates and returns the PDF for a specific invoice."""
+    """
+    Returns the stored PDF for the invoice.
+    If not stored yet, generates it, saves it (via background task), and returns it.
+    """
     user_id = current_user.get("sub")
     if not user_id:
         raise HTTPException(status_code=403, detail="Invalid user")
 
-    # 1. Fetch Invoice Data
-    invoice_db = await crud_invoice.get(db=db, id=invoice_id, user_id=user_id)
-    if not invoice_db:
+    # 1. Fetch Invoice Data (including pdf_content field)
+    # Ensure your 'get' method retrieves the pdf_content field
+    invoice_collection = crud_invoice._get_collection(db)
+    invoice_doc = await invoice_collection.find_one(
+        {"_id": invoice_id, "user_id": user_id},
+        projection={
+            "pdf_content": 1,
+            "invoice_number": 1,
+            "issue_date": 1,
+        },  # Fetch needed fields
+    )
+
+    if not invoice_doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found"
         )
 
-    # 2. Get Your Details (e.g., from config or a user settings collection)
-    # Example: Load from config, replace with DB lookup if needed
-    your_details = {
-        "name": settings.YOUR_COMPANY_NAME,  # Add these to Settings/env
-        "address_line1": settings.YOUR_ADDRESS_LINE1,
-        "zip_city": settings.YOUR_ZIP_CITY,
-        "tax_id": settings.YOUR_TAX_ID,
-        "vat_id": settings.YOUR_VAT_ID,
-        "bank_account_holder": settings.YOUR_BANK_HOLDER,
-        "bank_iban": settings.YOUR_BANK_IBAN,
-        "bank_bic": settings.YOUR_BANK_BIC,
-        "bank_name": settings.YOUR_BANK_NAME,
-        # Add other fields used in template
-    }
+    pdf_bytes = invoice_doc.get("pdf_content")
+    invoice_number = invoice_doc.get("invoice_number", "UnknownInvoice")
+    issue_date_str = invoice_doc.get("issue_date", datetime.utcnow()).strftime(
+        "%Y-%m-%d"
+    )
 
-    # 3. Generate PDF
-    try:
-        pdf_bytes = await pdf_generator.generate_invoice_pdf(invoice_db, your_details)
-    except Exception as e:
-        logger.error(
-            f"PDF generation failed for invoice {invoice_id}: {e}", exc_info=True
+    # 2. If PDF is stored, return it
+    if pdf_bytes:
+        logger.info(f"Returning stored PDF for invoice {invoice_number}")
+        filename = f"Rechnung_{invoice_number}_{issue_date_str}.pdf"
+        headers = {"Content-Disposition": f'inline; filename="{filename}"'}
+        return Response(
+            content=pdf_bytes, media_type="application/pdf", headers=headers
         )
-        raise HTTPException(status_code=500, detail="Failed to generate PDF.")
 
-    # 4. Return PDF as Response
-    filename = f"Rechnung_{invoice_db.invoice_number}_{invoice_db.issue_date.strftime('%Y-%m-%d')}.pdf"
-    headers = {
-        "Content-Disposition": f'inline; filename="{filename}"'  # Use 'inline' to display in browser, 'attachment' to force download
-    }
-    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
+    # 3. If PDF not stored, generate it (and maybe trigger save)
+    else:
+        logger.warning(
+            f"Stored PDF not found for invoice {invoice_number}. Generating on-the-fly."
+        )
+        # Fetch full invoice data needed for generation
+        invoice_db = await crud_invoice.get(db=db, id=invoice_id, user_id=user_id)
+        if not invoice_db:  # Should not happen if doc was found above, but check again
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invoice not found (consistency issue).",
+            )
+
+        # Get Your Details
+        your_details = {
+            "name": settings.YOUR_COMPANY_NAME,  # Add these to Settings/env
+            "address_line1": settings.YOUR_ADDRESS_LINE1,
+            "zip_city": settings.YOUR_ZIP_CITY,
+            "tax_id": settings.YOUR_TAX_ID,
+            "vat_id": settings.YOUR_VAT_ID,
+            "bank_account_holder": settings.YOUR_BANK_HOLDER,
+            "bank_iban": settings.YOUR_BANK_IBAN,
+            "bank_bic": settings.YOUR_BANK_BIC,
+            "bank_name": settings.YOUR_BANK_NAME,
+            # Add other fields used in template
+        }
+
+        # Generate PDF
+        try:
+            pdf_bytes_generated = await pdf_generator.generate_invoice_pdf(
+                invoice_db, your_details
+            )
+            if not pdf_bytes_generated:
+                raise ValueError("Generated PDF content is empty.")
+
+            # Optionally: Trigger background task to save it *now* if not already scheduled
+            # This ensures it's saved even if generation failed during initial create task
+            # Be careful not to create duplicate tasks if create endpoint already scheduled it.
+            # A flag on the invoice or checking task status might be needed for robust implementation.
+            # background_tasks.add_task(generate_and_store_invoice_pdf, db, invoice_id, user_id)
+            # logger.info(f"Scheduled PDF storage task for invoice {invoice_number} after on-the-fly generation.")
+
+            # Return the newly generated PDF
+            filename = f"Rechnung_{invoice_number}_{issue_date_str}.pdf"
+            headers = {"Content-Disposition": f'inline; filename="{filename}"'}
+            return Response(
+                content=pdf_bytes_generated,
+                media_type="application/pdf",
+                headers=headers,
+            )
+
+        except Exception as e:
+            logger.error(
+                f"On-the-fly PDF generation failed for invoice {invoice_id}: {e}",
+                exc_info=True,
+            )
+            raise HTTPException(status_code=500, detail="Failed to generate PDF.")
 
 
 # --- Endpoint to Generate Email Content ---

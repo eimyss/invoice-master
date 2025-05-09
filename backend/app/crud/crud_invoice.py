@@ -18,7 +18,7 @@ from app.models.invoice import (  # Import Invoice models
 from app.models.workItem import WorkItemInDB, ItemStatus  # Assuming you have this
 
 # Need TimeEntry model to fetch entries
-from app.models.time_entry import TimeEntryInDB  # Assuming you have this model
+from app.models.timeEntry import TimeEntryInDB  # Assuming you have this model
 
 # Need Client model to get snapshot
 from app.models.client import ClientInDB as FullClientModel
@@ -138,9 +138,9 @@ class CRUDInvoice(
         max_service_date = None
         for workItem in time_entry_models:
             for entry in workItem.timeEntries:
-                logger.info(f"Entry is : {entry}")
-                amountCalc = 100  # TODO: calc amount
-                pricePerHour = 80.0  # TODO: Time Entry doesnt save now PPH
+                pricePerHour = entry.price_per_hour
+                duration = entry.duration
+                amountCalc = pricePerHour * duration
                 line = InvoiceLineItem(
                     description=f"{workItem.created_at.strftime('%Y-%m-%d')}: {workItem.name} (Rate: {entry.rate_name})",
                     quantity=entry.duration,
@@ -151,6 +151,7 @@ class CRUDInvoice(
                     ],  # Link this line item back to the time entry
                 )
                 line_items.append(line)
+                logger.info(f"Calculated Amount is : {amountCalc} for rate: {entry}")
                 subtotal += amountCalc
                 # Track min/max dates for service period
                 if min_service_date is None or workItem.created_at < min_service_date:
@@ -246,6 +247,36 @@ class CRUDInvoice(
             f"Invoice {db_invoice.invoice_number} created successfully with ID: {new_invoice_id}"
         )
 
+        processed_work_item_ids = [wi.id for wi in time_entry_models]
+
+        if processed_work_item_ids:  # Only update if there are items
+            update_result = await time_entry_collection.update_many(
+                {
+                    "_id": {"$in": processed_work_item_ids},
+                    "user_id": user_id,
+                },  # Ensure user ownership
+                {
+                    "$set": {
+                        "invoiceId": new_invoice_id,
+                        "is_invoiced": True,
+                        "status": ItemStatus.PROCESSED,
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
+            logger.info(
+                f"Marked {update_result.modified_count} work items as invoiced with Invoice ID {new_invoice_id}"
+            )
+            if update_result.modified_count != len(processed_work_item_ids):
+                logger.warning(
+                    f"Mismatch: Expected to update {len(processed_work_item_ids)} work items, "
+                    f"but updated {update_result.modified_count}."
+                )
+                # This could happen if some items were somehow invoiced by another process
+                # between step 2 and step 7, or if user_id check failed for some.
+                # Consider how critical this is for your application.
+        else:
+            logger.info("No work items were processed to be marked as invoiced.")
         # ... (update time entries, return created invoice) ...
         # Fetching back will get datetime objects, Pydantic's from_attributes=True
         # should handle converting them back to 'date' for the model fields.

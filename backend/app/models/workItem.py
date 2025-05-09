@@ -20,12 +20,10 @@ class TimeEntry(BaseModel):
         ..., max_length=100, description="Name of the original Rate in Project"
     )
     duration: float = Field(..., description="Number of hours for this item")
-    calculatedAmount: Optional[float] = Field(
-        default=None, description="Calculated amount based on other fields"
+    calculatedAmount: float = Field(
+        default=0, description="Calculated amount based on other fields"
     )
-    price_per_hour: Optional[float] = Field(
-        default=None, description="Price per hour for this item"
-    )
+    price_per_hour: float = Field(default=0, description="Price per hour for this item")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -81,6 +79,10 @@ class WorkItemBase(BaseModel):
 # Schema for creating a project via API
 class WorkItemCreate(WorkItemBase):
     pass  # Inherits all fields
+
+
+class TimeEntryCreate(TimeEntry):
+    pass
 
 
 # Schema for updating a project via API (all fields optional)

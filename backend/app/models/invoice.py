@@ -116,12 +116,25 @@ class InvoiceInDB(InvoiceBase):
     # project_snapshots: Optional[List[ProjectInfo]] = None
     line_items: List[InvoiceLineItem]  # Store the calculated line items
 
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    # --- ADD PDF CONTENT FIELD ---
+    # Store the raw PDF bytes. Make optional as it might be generated later.
+    pdf_content: Optional[bytes] = Field(
+        default=None, description="Raw content of the generated PDF file.", exclude=True
+    )  # Exclude from default API responses unless specifically requested
+    # -----------------------------
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        arbitrary_types_allowed=True,  # Needed if directly assigning bytes sometimes
+    )
 
 
 # --- Schema Returned by API ---
 # Might include more details than the base, like the generated number and items
 class Invoice(InvoiceInDB):
+    pdf_content: Optional[bytes] = Field(
+        default=None, exclude=True
+    )  # Usually exclude from list
     # Add calculated fields like due date if not stored directly
     # Or potentially add linked objects if not embedding snapshots
     pass
