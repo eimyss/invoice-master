@@ -1,6 +1,9 @@
 // frontend/src/features/invoices/InvoiceListPage.jsx
-import React, { useState } from "react";
+
+import React, { useState, useCallback } from "react";
 import { Link } from "react-router-dom"; // For linking to detail page later
+import { Modal } from "../../components/ui/Modal"; // Your general Modal component
+import { getInvoicePdfBlob } from "../../services/invoiceService"; // Import new service
 import { useEntityList } from "../../hooks/useCrudQueries"; // Generic hook
 import {
   getInvoices,
@@ -15,6 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { PrepareEmailModal } from "../../components/ui/PrepareEmailModal"; // Import the modal
 
+import { PdfViewer } from "../../components/ui/PdfViewer"; // Import PdfViewer
 // Helper to format date strings
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -38,7 +42,12 @@ const formatCurrency = (amount) => {
 };
 
 // --- Invoice Table Component --- (Can be moved to ui)
-const InvoiceTable = ({ invoices, onPrepareEmail, isLoadingEmail }) => {
+const InvoiceTable = ({
+  invoices,
+  onPrepareEmail,
+  isLoadingEmail,
+  onViewPdf,
+}) => {
   if (!invoices || invoices.length === 0) {
     return (
       <p className="text-center text-gray-500 dark:text-gray-400 py-10">
@@ -107,15 +116,13 @@ const InvoiceTable = ({ invoices, onPrepareEmail, isLoadingEmail }) => {
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                 {/* TODO: Link to Detail View */}
                 {/* <Link to={`/invoices/${invoice.id}`} title="View Details" className="p-1 text-gray-400 hover:text-blue-600"><EyeIcon className="h-5 w-5 inline"/></Link> */}
-                <a
-                  href={getInvoicePdfUrl(invoice._id)}
-                  title="Download PDF"
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={() => onViewPdf(invoice._id, invoice.invoice_number)} // Call onViewPdf
+                  title="View PDF"
                   className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                 >
-                  <DocumentArrowDownIcon className="h-5 w-5 inline" />
-                </a>
+                  <EyeIcon className="h-5 w-5 inline" />
+                </button>
                 <button
                   onClick={() =>
                     onPrepareEmail(invoice.id, invoice.client_snapshot?.email)
@@ -142,6 +149,10 @@ function InvoiceListPage() {
     useState(null);
   const [emailContent, setEmailContent] = useState(null);
 
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [pdfBlob, setPdfBlob] = useState(null);
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   // --- Fetch Invoices ---
   const {
     data: invoices,
@@ -154,6 +165,35 @@ function InvoiceListPage() {
     { filters }, // Options object passed to useQuery
   );
 
+  const handleViewPdf = useCallback(async (invoiceId, invoiceNumber) => {
+    if (!invoiceId) {
+      console.log("no Invoice ID provided");
+      return;
+    }
+    console.log("Viewing PDF for invoice:", invoiceId);
+    setIsLoadingPdf(true);
+    setPdfBlob(null); // Clear previous blob
+    setIsPdfModalOpen(true); // Open modal immediately to show loading state
+    setPdfFileName(
+      `Rechnung_${invoiceNumber}_${new Date().toISOString().split("T")[0]}.pdf`,
+    );
+
+    try {
+      const blob = await getInvoicePdfBlob(invoiceId);
+      setPdfBlob(blob);
+    } catch (error) {
+      console.error("Error fetching PDF blob:", error);
+      alert(`Failed to load PDF: ${error.message || "Unknown error"}`);
+      setIsPdfModalOpen(false); // Close modal on error
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  }, []);
+
+  const closePdfModal = () => {
+    setIsPdfModalOpen(false);
+    setPdfBlob(null); // Clean up blob state
+  };
   // --- Mutation for Preparing Email ---
   const { mutate: prepareEmailMutate, isLoading: isLoadingEmailPrep } =
     useMutation({
@@ -223,6 +263,7 @@ function InvoiceListPage() {
           onPrepareEmail={handlePrepareEmail}
           // Pass the ID being loaded so only that button's icon shows loading state
           isLoadingEmail={selectedInvoiceIdForEmail}
+          onViewPdf={handleViewPdf} // Pass new handler
         />
       )}
 
@@ -235,6 +276,26 @@ function InvoiceListPage() {
         emailContent={emailContent}
         isLoading={isLoadingEmailPrep && !emailContent} // Show loading only while mutate runs and no content yet
       />
+      <Modal
+        isOpen={isPdfModalOpen}
+        onClose={closePdfModal}
+        title={`Viewing PDF: ${pdfFileName}`}
+        size="4xl" // Use a larger size for PDFs
+      >
+        {isLoadingPdf && <div className="p-10 text-center">Loading PDF...</div>}
+        {!isLoadingPdf && pdfBlob && (
+          <div className="h-[80vh] w-full">
+            {" "}
+            {/* Set height for the viewer */}
+            <PdfViewer blob={pdfBlob} fileName={pdfFileName} />
+          </div>
+        )}
+        {!isLoadingPdf && !pdfBlob && !isPdfModalOpen && (
+          /* Only if error occurred and modal closed */ <div className="p-10 text-center text-red-500">
+            Failed to load PDF.
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

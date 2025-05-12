@@ -54,13 +54,13 @@ const ClientTable = ({ clients, onDelete, isLoadingDelete }) => {
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {clients.map((client) => (
             <tr
-              key={client.id}
+              key={client._id}
               className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
               {/* ... table cells ... */}
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                 <Link
-                  to={`/clients/${client.id}/edit`}
+                  to={`/clients/${client._id}/edit`}
                   className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                 >
                   {client.name}
@@ -74,7 +74,7 @@ const ClientTable = ({ clients, onDelete, isLoadingDelete }) => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                 <Link
-                  to={`/clients/${client.id}/edit`}
+                  to={`/clients/${client._id}/edit`}
                   title="Edit"
                   className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
                 >

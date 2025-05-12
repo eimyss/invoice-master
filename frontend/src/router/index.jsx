@@ -212,6 +212,10 @@ const AppRouter = () => {
             element={<EditClientPage />}
           />{" "}
           <Route path="projects" element={<ProjectListPage />} />
+          <Route
+            path="projects/:clientId/edit"
+            element={<AddProjectPage />}
+          />{" "}
           <Route path="projects/new" element={<AddProjectPage />} />{" "}
           {/* Edit Route */}
           <Route path="workItems" element={<WorkItemListPage />} />

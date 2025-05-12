@@ -29,7 +29,7 @@ const ProjectTable = ({ projects, onDelete, isLoadingDelete }) => {
               Name
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
-              Client ID (TEMP)
+              Client Name
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
               Status
@@ -47,7 +47,7 @@ const ProjectTable = ({ projects, onDelete, isLoadingDelete }) => {
             >
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <Link
-                  to={`/projects/${project.id}/edit`}
+                  to={`/projects/${project._id}/edit`}
                   className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                 >
                   {project.name}
@@ -65,7 +65,7 @@ const ProjectTable = ({ projects, onDelete, isLoadingDelete }) => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                 <Link
-                  to={`/projects/${project.id}/edit`}
+                  to={`/projects/${project._id}/edit`}
                   title="Edit"
                   className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
                 >

@@ -7,7 +7,7 @@ import { getClientById, updateClient } from "../../services/clientService";
 // ClientFormData type import might still be useful for reference, but not used in function signatures here
 // import { ClientFormData } from './clientSchema';
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-
+import ClientForm from "./ClientForm"; // Assuming ClientForm is a separate component
 const EditClientPage = () => {
   // Removed : React.FC
   const { clientId } = useParams(); // Removed <{ clientId: string }> generic

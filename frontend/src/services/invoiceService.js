@@ -62,5 +62,14 @@ export const getInvoiceById = async (invoiceId) => {
   return response.data;
 };
 
+export const getInvoicePdfBlob = async (invoiceId) => {
+  if (!invoiceId) throw new Error("Invoice ID is required.");
+  console.log("Fetching PDF blob for invoice:", invoiceId);
+  const response = await apiClient.get(`${API_URL}/${invoiceId}/pdf`, {
+    responseType: "blob", // <<< Crucial: Tell Axios to expect a binary blob
+  });
+  // The response.data will be a Blob object
+  return response.data;
+};
 // TODO: Add updateInvoice function (e.g., for changing status)
 // export const updateInvoiceStatus = async ({ invoiceId, status }) => { ... }
