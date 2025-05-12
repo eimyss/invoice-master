@@ -16,6 +16,7 @@ import EditClientPage from "../features/clients/EditClientPage"; // Import Edit 
 import Layout from "../components/Layout";
 import DashboardPage from "../pages/DashboardPage";
 import LoginPage from "../pages/LoginPage";
+import ProjectFormPage from "../features/projects/ProjectFormPage"; // Import Project Form page
 import ClientListPage from "../features/clients/ClientListPage";
 import ProjectListPage from "../features/projects/ProjectListPage";
 import AddProjectPage from "../features/projects/AddProjectPage";
@@ -212,17 +213,17 @@ const AppRouter = () => {
             element={<EditClientPage />}
           />{" "}
           <Route path="projects" element={<ProjectListPage />} />
+          <Route path="projects/new" element={<ProjectFormPage />} />{" "}
+          {/* Add Mode */}
           <Route
-            path="projects/:clientId/edit"
-            element={<AddProjectPage />}
-          />{" "}
-          <Route path="projects/new" element={<AddProjectPage />} />{" "}
-          {/* Edit Route */}
+            path="projects/:projectId/edit"
+            element={<ProjectFormPage />}
+          />
+          <Route path="projects/:projectId" element={<ProjectFormPage />} />
           <Route path="workItems" element={<WorkItemListPage />} />
           <Route path="workItems/new" element={<AddWorkItemPage />} />
           <Route path="invoices" element={<InvoiceListPage />} />
           <Route path="invoices/new" element={<CreateInvoicePage />} />
-          {/* Optional Detail Route: <Route path="clients/:clientId" element={<ClientDetailPage />} /> */}
           {/* Other feature routes */}
           {/* <Route path="projects" element={<ProjectListPage />} /> */}
           {/* <Route path="invoices" element={<InvoiceListPage />} /> */}

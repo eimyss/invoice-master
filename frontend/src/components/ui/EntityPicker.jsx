@@ -42,6 +42,10 @@ export const EntityPicker = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  console.log(
+    "EntityPicker RENDERED. selectedDisplayValue:",
+    selectedDisplayValue,
+  );
   const debouncedSetSearchTerm = useMemo(
     () => debounce((term) => setSearchTerm(term), 300),
     [],
@@ -103,7 +107,8 @@ export const EntityPicker = ({
         <span
           className={`block truncate ${selectedValue ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}
         >
-          {selectedDisplayValue || `Select ${label}...`}
+          {selectedDisplayValue || `Select ${label}...`}{" "}
+          {/* This line uses selectedDisplayValue */}
         </span>
         <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <ChevronUpDownIcon
