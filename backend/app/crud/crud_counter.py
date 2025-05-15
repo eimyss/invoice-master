@@ -3,6 +3,8 @@ import logging
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from pymongo import ReturnDocument
 
+from datetime import datetime, date, timedelta, timezone, UTC
+
 logger = logging.getLogger(__name__)
 COUNTER_COLLECTION = "counters"
 INVOICE_COUNTER_ID = "invoice_number"  # Document ID for the invoice counter
@@ -16,7 +18,7 @@ async def get_next_invoice_number(
     Format: PREFIX-YYYY-NNNN (e.g., INV-2024-0001)
     """
     collection = db[COUNTER_COLLECTION]
-    current_year = datetime.utcnow().year
+    current_year = datetime.now(UTC).year
     counter_id = f"{INVOICE_COUNTER_ID}_{current_year}"  # Year-specific counter
 
     # Atomically find and increment the sequence for the current year

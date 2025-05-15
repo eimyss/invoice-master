@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import List, Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
-from datetime import date, timedelta, datetime, time, timezone
+from datetime import date, timedelta, datetime, time, timezone, UTC
 
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from app.crud.base import CRUDBase
@@ -260,7 +260,7 @@ class CRUDInvoice(
                         "invoiceId": new_invoice_id,
                         "is_invoiced": True,
                         "status": ItemStatus.PROCESSED,
-                        "updated_at": datetime.utcnow(),
+                        "updated_at": datetime.now(UTC),
                     }
                 },
             )

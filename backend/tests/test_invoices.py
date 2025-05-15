@@ -27,9 +27,9 @@ from app.models.workItem import (
 # --- Test 1: Invoice Amount Calculation ---
 @pytest.mark.asyncio
 async def test_invoice_creation_calculates_correct_amount(
-    db_conn: AsyncIOMotorDatabase,  # Use db_conn from conftest
+    db_conn_session: AsyncIOMotorDatabase,  # Use db_conn from conftest
     test_user: dict,
-    async_client: AsyncClient,  # For API level test
+    default_test_client: AsyncClient,  # For API level test
     auth_headers: dict,
 ):
     """
@@ -42,19 +42,19 @@ async def test_invoice_creation_calculates_correct_amount(
     client_crud = crud_client.CRUDClient(ClientInDB, collection_name="clients")
     client_data = ClientCreate(name="Test Client for Invoice Calc")
     created_client = await client_crud.create(
-        db=db_conn, obj_in=client_data, user_id=user_id
+        db=db_conn_session, obj_in=client_data, user_id=user_id
     )
 
     # Project
     project_crud = crud_project.CRUDProject(ProjectInDB, collection_name="projects")
-    project_rates = [ProjectRate(name="Standard Rate", price_per_hour=100.0)]
+    project_rates = [ProjectRate(name="Session Standard Rate", price_per_hour=120.0)]
     project_data = ProjectCreate(
         name="Project for Invoice Calc",
         client_id=created_client.id,
         rates=project_rates,
     )
     created_project = await project_crud.create(
-        db=db_conn, obj_in=project_data, user_id=user_id
+        db=db_conn_session, obj_in=project_data, user_id=user_id
     )
 
     # Time Entries
@@ -64,25 +64,25 @@ async def test_invoice_creation_calculates_correct_amount(
 
     timeEntry_data_1 = TimeEntryCreate(
         description="Time Entry item 1",  # Description of the rate
-        rate_name="Standard Rate 1",  # Name of the original rate in the project
+        rate_name="Session Standard Rate",  # Name of the original rate in the project
         duration=2.0,  # hours
         price_per_hour=100.0,  # Price per hour for this item
     )
     timeEntry_data_2 = TimeEntryCreate(
         description="Time Entry item 2",  # Description of the rate
-        rate_name="Standard Rate 2",  # Name of the original rate in the project
+        rate_name="Session Standard Rate",  # Name of the original rate in the project
         duration=5.0,  # hours
         price_per_hour=150.0,  # Price per hour for this item
     )
     timeEntry_data_3 = TimeEntryCreate(
         description="Time Entry item 3",  # Description of the rate
-        rate_name="Standard Rate 3",  # Name of the original rate in the project
+        rate_name="Session Standard Rate",  # Name of the original rate in the project
         duration=2.0,  # hours
         price_per_hour=100.0,  # Price per hour for this item
     )
     timeEntry_data_4 = TimeEntryCreate(
         description="Time Entry item 4",  # Description of the rate
-        rate_name="Standard Rate 4",  # Name of the original rate in the project
+        rate_name="Session Standard Rate",  # Name of the original rate in the project
         duration=5.0,  # hours
         price_per_hour=150.0,  # Price per hour for this item
     )
@@ -95,7 +95,9 @@ async def test_invoice_creation_calculates_correct_amount(
         start_date=datetime.now(UTC),
         end_date=datetime.now(UTC) + timedelta(days=7),
     )
-    te1 = await time_entry_crud.create(db=db_conn, obj_in=te1_data, user_id=user_id)
+    te1 = await time_entry_crud.create(
+        db=db_conn_session, obj_in=te1_data, user_id=user_id
+    )
 
     te2_data = WorkItemCreate(
         project_id=created_project.id,
@@ -106,7 +108,9 @@ async def test_invoice_creation_calculates_correct_amount(
         start_date=datetime.now(UTC),
         end_date=datetime.now(UTC) + timedelta(days=7),
     )
-    te2 = await time_entry_crud.create(db=db_conn, obj_in=te2_data, user_id=user_id)
+    te2 = await time_entry_crud.create(
+        db=db_conn_session, obj_in=te2_data, user_id=user_id
+    )
 
     # 2. Prepare Invoice Creation Request (via API)
     invoice_request_data = InvoiceCreateRequest(
@@ -118,12 +122,12 @@ async def test_invoice_creation_calculates_correct_amount(
     )
 
     created_invoice_api_data = await crud_invoice.create_from_request(
-        db=db_conn, user_id=user_id, request=invoice_request_data
+        db=db_conn_session, user_id=user_id, request=invoice_request_data
     )
 
     # 4. Assertions
     # expected_subtotal = te1.amount + te2.amount  # 200.0 + 150.0 = 350.0
-    expected_subtotal = 1900  # 200.0 + 150.0 = 350.0
+    expected_subtotal = 1680  # 200.0 + 150.0 = 350.0
     expected_tax_amount = round(expected_subtotal * 0.19, 2)
     expected_total_amount = round(expected_subtotal + expected_tax_amount, 2)
 
@@ -135,8 +139,12 @@ async def test_invoice_creation_calculates_correct_amount(
     )  # Two time entries -> two line items (in this simple setup)
 
     # Verify time entries are marked as invoiced
-    updated_te1 = await time_entry_crud.get(db=db_conn, id=te1.id, user_id=user_id)
-    updated_te2 = await time_entry_crud.get(db=db_conn, id=te2.id, user_id=user_id)
+    updated_te1 = await time_entry_crud.get(
+        db=db_conn_session, id=te1.id, user_id=user_id
+    )
+    updated_te2 = await time_entry_crud.get(
+        db=db_conn_session, id=te2.id, user_id=user_id
+    )
     assert updated_te1.invoice_id == created_invoice_api_data.id
     assert updated_te2.invoice_id == created_invoice_api_data.id
     assert updated_te1.status == ItemStatus.PROCESSED

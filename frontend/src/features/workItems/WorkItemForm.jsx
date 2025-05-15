@@ -87,9 +87,16 @@ const WorkItemForm = ({
   // --- Watch relevant fields ---
   const watchedTimeEntries = watch("timeEntries"); // Watch the entire array
   const watchedProjectId = watch("project_id"); // Watch selected project ID
-
   // --- Fetch Project Details & Rates when Project ID changes ---
-  const { data: projectData, isLoading: isLoadingProjectData } = useQuery({
+  const {
+    data: projectData,
+    isLoading: isLoadingProjectData,
+    isFetching: isFetchingProjectData, // Add this
+    isSuccess: isProjectDataSuccess, // Add this
+    isError: isProjectDataError, // Add this
+    error: projectDataErrorObject, // Add this
+    status: projectDataStatus, // Add this: 'pending', 'error', 'success'
+  } = useQuery({
     queryKey: ["project-details", watchedProjectId], // Key depends on watched project ID
     //  queryFn: () => getProjects({ projectId: watchedProjectId }), // Assuming getProjects can fetch by ID, OR use getProjectById
     queryFn: () => getProjectById(watchedProjectId), // <-- Better if you have this service
@@ -107,7 +114,6 @@ const WorkItemForm = ({
       // setValue('timeEntries', [{ rate_name: "", duration: "", description: "", rate_price_per_hour: null }]);
     },
   });
-
   // Extract rates from fetched project data
   const availableRates = useMemo(() => projectData?.rates || [], [projectData]);
 
@@ -181,10 +187,6 @@ const WorkItemForm = ({
       (r) => r.name === selectedRateName,
     );
     const price = selectedRate?.price_per_hour || null;
-
-    console.log(
-      `Rate changed for index ${index}: Name='${selectedRateName}', Price=${price}`,
-    );
 
     // Update the specific row in the form state
     setValue(`timeEntries.${index}.rate_name`, selectedRateName, {

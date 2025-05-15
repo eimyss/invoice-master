@@ -8,15 +8,115 @@ from app.crud.base import CRUDBase
 from app.models.workItem import (
     WorkItemCreate,
     WorkItemUpdate,
+    TimeEntry,
     WorkItemInDB,
     WorkItemWithProjectName,
 )
 from app.models.client import Client  # Import Client model for embedding shape
 
+from app.crud.crud_project import crud_project  # To use the project CRUD instance
+
 logger = logging.getLogger(__name__)
 
 
 class CRUDWorkItem(CRUDBase[WorkItemInDB, WorkItemCreate, WorkItemUpdate]):
+    async def create(
+        self, db: AsyncIOMotorDatabase, *, obj_in: WorkItemCreate, user_id: str
+    ) -> WorkItemInDB:
+        """
+        Create a new WorkItem, performing pre-save calculations for TimeEntry amounts.
+        Overrides the base create method.
+        """
+        logger.info(
+            f"CRUDWorkItem: Starting creation for WorkItem '{obj_in.name}' for user {user_id}"
+        )
+
+        # --- 1. Fetch the Associated Project to get its rates ---
+        project = await crud_project.get(
+            db=db, id=obj_in.project_id, user_id=user_id
+        )  # Ensure user owns project
+        if not project:
+            logger.error(
+                f"Project with ID {obj_in.project_id} not found or not owned by user {user_id}."
+            )
+            raise ValueError(f"Project not found: {obj_in.project_id}")
+
+        # Create a dictionary of project rates for quick lookup: {rate_name: price_per_hour}
+        project_rates_map = {rate.name: rate.price_per_hour for rate in project.rates}
+        logger.debug(f"Project rates map for project {project.id}: {project_rates_map}")
+
+        # --- 2. Process and Calculate Amounts for TimeEntries ---
+        processed_time_entries: List[TimeEntry] = []
+        for te_in in obj_in.timeEntries:  # te_in is from WorkItemCreate.timeEntries
+            if te_in.rate_name not in project_rates_map:
+                logger.error(
+                    f"Invalid rate_name '{te_in.rate_name}' provided for project {project.id}. Available: {list(project_rates_map.keys())}"
+                )
+                raise ValueError(
+                    f"Rate '{te_in.rate_name}' not found for project '{project.name}'."
+                )
+
+            # Get the authoritative price per hour from the project
+            authoritative_price_per_hour = project_rates_map[te_in.rate_name]
+
+            # Calculate amount based on backend data
+            calculated_amount = round(te_in.duration * authoritative_price_per_hour, 2)
+
+            # Create a new TimeEntry object (or update existing if obj_in.timeEntries are full models)
+            # Ensure the TimeEntry model in WorkItemInDB can accept all these fields.
+            processed_te = TimeEntry(
+                description=te_in.description,
+                rate_name=te_in.rate_name,
+                duration=te_in.duration,
+                price_per_hour=authoritative_price_per_hour,  # Use authoritative price
+                calculatedAmount=calculated_amount,  # Use backend calculated amount
+            )
+            processed_time_entries.append(processed_te)
+            logger.debug(
+                f"Processed TimeEntry: desc='{processed_te.description}', amount={processed_te.calculatedAmount}"
+            )
+
+        # --- 3. Prepare the WorkItemInDB object ---
+        # Create a dictionary from the input object, then update timeEntries
+        obj_in_data = obj_in.model_dump(
+            exclude={"timeEntries"}
+        )  # Exclude original timeEntries
+
+        db_obj_data = {
+            **obj_in_data,  # Spread other fields from WorkItemCreate
+            "user_id": user_id,
+            "timeEntries": [
+                te.model_dump() for te in processed_time_entries
+            ],  # Use processed entries
+            # id, created_at, updated_at will be handled by WorkItemInDB model defaults
+        }
+        # Instantiate the DB model
+        db_obj = WorkItemInDB(**db_obj_data)
+
+        # --- 4. Call the base class's standard MongoDB insertion logic ---
+        # This part now essentially becomes the original CRUDBase.create logic,
+        # but we're calling it after our custom processing.
+        # OR, more directly, perform the insert here:
+
+        collection = self._get_collection(db)
+        insert_data = db_obj.model_dump(by_alias=True)  # For _id alias
+        logger.info(
+            f"CRUDWorkItem ({self.model.__name__}): Attempting to insert processed data for user {user_id}"
+        )
+        result = await collection.insert_one(insert_data)
+
+        created_doc = await collection.find_one({"_id": result.inserted_id})
+        if created_doc:
+            logger.info(
+                f"CRUDWorkItem ({self.model.__name__}): Created successfully with ID: {created_doc['_id']}"
+            )
+            return WorkItemInDB(**created_doc)  # Parse back to ensure type consistency
+        else:
+            logger.error(
+                f"CRUDWorkItem ({self.model.__name__}): Failed to fetch object immediately after creation for user {user_id}"
+            )
+            raise Exception("Failed to retrieve WorkItem after creation")
+
     # Override get_multi_by_owner for Workitem-specific search if needed
     async def get_multi_by_owner(
         self,

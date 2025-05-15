@@ -21,6 +21,55 @@ let mockClients = [
 ];
 let nextClientId = 3;
 
+let mockProjects = [
+  {
+    id: "proj-456",
+    name: "Another Project",
+    client_id: "client-def",
+    rates: [
+      {
+        name: "Admin",
+        price_per_hour: 100.0,
+      },
+      {
+        name: "Consulting",
+        price_per_hour: 100.0,
+      },
+    ],
+  },
+  {
+    id: "proj-123",
+    name: "Test Project Alpha",
+    client_id: "client-abc",
+    rates: [
+      {
+        name: "Development",
+        price_per_hour: 100.0,
+      },
+      {
+        name: "Consulting",
+        price_per_hour: 100.0,
+      },
+    ],
+  },
+];
+let nextProjectId = 3;
+let mockWorkItems = [
+  {
+    id: "1",
+    name: "Mock Work Item",
+    email: "alpha@mock.com",
+    user_id: "mock-user-123",
+  },
+  {
+    id: "2",
+    name: "Mock WorkItem Beta",
+    email: "beta@mock.com",
+    user_id: "mock-user-123",
+  },
+];
+let nextWorkItemId = 3;
+
 export const handlers = [
   // Mock GET /clients
   http.get(`${API_BASE_URL}/clients`, ({ request }) => {
@@ -140,4 +189,56 @@ export const resetMockClients = () => {
     },
   ];
   nextClientId = 3;
+};
+
+export const resetMockProjects = () => {
+  mockProjects = [
+    {
+      id: "proj-456",
+      name: "Another Project",
+      client_id: "client-def",
+      rates: [
+        {
+          name: "Admin",
+          price_per_hour: 100.0,
+        },
+        {
+          name: "Consulting",
+          price_per_hour: 100.0,
+        },
+      ],
+    },
+    {
+      id: "proj-123",
+      name: "Test Project Alpha",
+      client_id: "client-abc",
+      rates: [
+        {
+          name: "Development",
+          price_per_hour: 100.0,
+        },
+        {
+          name: "Consulting",
+          price_per_hour: 100.0,
+        },
+      ],
+    },
+  ];
+};
+export const resetMockWorkItems = () => {
+  mockWorkItems = [
+    {
+      id: "1",
+      name: "Mock Work Item",
+      email: "alpha@mock.com",
+      user_id: "mock-user-123",
+    },
+    {
+      id: "2",
+      name: "Mock WorkItem Beta",
+      email: "beta@mock.com",
+      user_id: "mock-user-123",
+    },
+  ];
+  nextWorkItemId = 3;
 };
