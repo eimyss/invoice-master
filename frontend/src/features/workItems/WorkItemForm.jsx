@@ -23,6 +23,7 @@ const WorkItemForm = ({
   initialData = {},
   isLoading = false,
   submitButtonText = "Save Time Entry", // Renamed button text
+  formMode,
 }) => {
   // --- State ---
   const [selectedProjectId, setSelectedProjectId] = useState(
@@ -35,6 +36,11 @@ const WorkItemForm = ({
     initialData?.client_name || "Loading...",
   ); // Add state for client name
 
+  const FORM_MODES = {
+    ADD: "add",
+    EDIT: "edit",
+    VIEW: "view", // Optional: for a read-only view
+  };
   const WorkItemStatus = {
     ACTIVE: "active",
     CREATED: "created",
@@ -58,6 +64,9 @@ const WorkItemForm = ({
       project_id: initialData?.project_id || "",
       status: initialData?.status || WorkItemStatus.CREATED,
       name: initialData?.name || "",
+      selectedClientName:
+        initialData?.client_name || "No Client in initialData",
+
       date: initialData?.date ? new Date(initialData.date) : new Date(), // Default to today
       // Rename 'rates' array to 'timeEntries' and set default structure
       timeEntries:
@@ -154,10 +163,11 @@ const WorkItemForm = ({
       console.log("Project selected:", project);
       const newProjectId = project?._id || ""; // Use ID from selected project object
       const newProjectName = project?.name || "";
+      const newClientName = project?.client_name || "";
 
       setSelectedProjectId(newProjectId);
       setSelectedProjectName(newProjectName);
-      setSelectedClientName("Loading..."); // Reset client name display
+      setSelectedClientName(newClientName); // Reset client name display
       setValue("project_id", newProjectId, {
         shouldValidate: true,
         shouldDirty: true,
@@ -300,9 +310,37 @@ const WorkItemForm = ({
           // Get watched values for this specific row to calculate amount
           const watchedEntry = watchedTimeEntries?.[index] || {};
           const duration = parseFloat(watchedEntry.duration) || 0;
-          const pricePerHour =
-            parseFloat(watchedEntry.rate_price_per_hour) || 0;
-          const calculatedAmount = (duration * pricePerHour).toFixed(2); // Calculate dynamically
+          let displayAmount;
+
+          const watchedRow = watch(`timeEntries.${index}`); // Watch the specific row object
+          const currentDuration = parseFloat(watchedRow?.duration) || 0;
+          const currentPricePerHour =
+            parseFloat(watchedRow?.rate_price_per_hour) || 0;
+          // In 'view' mode, or 'edit' mode *before* user interaction makes fields dirty for this row,
+          // prefer the amount from the initial data (which is now part of react-hook-form's state via defaultValues).
+          // The `field` object from `useFieldArray` reflects the current RHF state for that item.
+          if (
+            formMode === FORM_MODES.VIEW ||
+            (formMode === FORM_MODES.EDIT &&
+              field.calculatedAmount !== undefined &&
+              field.calculatedAmount !== null)
+          ) {
+            // If field.calculatedAmount (from defaultValues/initialData) exists, use it.
+            // This assumes 'calculatedAmount' was part of your defaultValues structure.
+            displayAmount = (parseFloat(field.calculatedAmount) || 0).toFixed(
+              2,
+            );
+            console.log(
+              `Displaying stored amount for index ${index}: ${displayAmount}, field:`,
+              field,
+            );
+          } else {
+            // Otherwise (add mode, or edit mode after changes), calculate live
+            displayAmount = (currentDuration * currentPricePerHour).toFixed(2);
+            console.log(
+              `Displaying calculated amount for index ${index}: ${displayAmount}`,
+            );
+          }
 
           return (
             <div
@@ -373,7 +411,7 @@ const WorkItemForm = ({
                   Amount (€)
                 </label>
                 <div className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                  {calculatedAmount}
+                  {displayAmount}
                 </div>
                 {/* Hidden input to store rate_price_per_hour */}
                 <input

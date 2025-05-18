@@ -80,14 +80,14 @@ const WorkItemTable = ({ workItems, onDelete, isLoadingDelete }) => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                 <Link
-                  to={`/workItems/${workItem.id}/edit`}
+                  to={`/workItems/${workItem._id}/edit`}
                   title="Edit"
                   className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
                 >
                   <PencilIcon className="h-5 w-5 inline" />
                 </Link>
                 <button
-                  onClick={() => onDelete(workItem.id, workItem.name)}
+                  onClick={() => onDelete(workItem._id, workItem.name)}
                   title="Delete"
                   disabled={isLoadingDelete}
                   className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 disabled:opacity-50"

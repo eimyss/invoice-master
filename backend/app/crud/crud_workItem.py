@@ -249,7 +249,6 @@ class CRUDWorkItem(CRUDBase[WorkItemInDB, WorkItemCreate, WorkItemUpdate]):
             )
 
         # --- Stage 5: Project Fields (Shape the output) ---
-        # *** FIX: Use $project stage ***
         project_stage = {
             "$project": {
                 # Include fields from TimeEntry (use 1 to include)
@@ -440,6 +439,123 @@ class CRUDWorkItem(CRUDBase[WorkItemInDB, WorkItemCreate, WorkItemUpdate]):
             )
             # Return empty list or raise an internal error
             return []
+
+    async def get_single_with_details(
+        self,
+        db: AsyncIOMotorDatabase,
+        *,
+        item_id: UUID,  # ID of the WorkItem to fetch
+        user_id: str,
+    ) -> Optional[WorkItemWithProjectName]:
+        """
+        Retrieves a single WorkItem by its ID for a user, including
+        the associated project name and the project's client name.
+        """
+        collection = self._get_collection(db)  # Gets the "work_items" collection
+        pipeline = []
+
+        # --- Stage 1: Match the specific WorkItem by ID and user_id ---
+        pipeline.append({"$match": {"_id": item_id, "user_id": user_id}})
+        # --- Stage 2: Lookup Project Information ---
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "projects",  # Projects collection
+                    "localField": "project_id",  # From work_items
+                    "foreignField": "_id",  # From projects
+                    "as": "project_data_array",  # Use a distinct name for the array
+                }
+            }
+        )
+        # --- Stage 3: Unwind the project_data_array ---
+        # (Since we matched a single WorkItem, this should at most yield one document)
+        pipeline.append(
+            {
+                "$unwind": {
+                    "path": "$project_data_array",
+                    "preserveNullAndEmptyArrays": True,  # Keep WorkItem if project somehow missing
+                }
+            }
+        )
+        # --- Stage 4: Lookup Client Information (based on project_data_array.client_id) ---
+        pipeline.append(
+            {
+                "$lookup": {
+                    "from": "clients",  # Clients collection
+                    "localField": "project_data_array.client_id",  # Field from the joined project
+                    "foreignField": "_id",  # Field from clients
+                    "as": "client_data_array",  # Temporary field name for joined client data
+                }
+            }
+        )
+
+        # --- Stage 5: Unwind the client_data_array ---
+        pipeline.append(
+            {
+                "$unwind": {
+                    "path": "$client_data_array",
+                    "preserveNullAndEmptyArrays": True,  # Keep result even if client somehow missing
+                }
+            }
+        )
+        # --- Stage 6: Add the project_name and client_name fields ---
+        pipeline.append(
+            {
+                "$addFields": {
+                    "project_name": "$project_data_array.name",
+                    "client_name": "$client_data_array.name",
+                    # You could add client_id_from_project: "$project_data_array.client_id"
+                    # if you needed it and it wasn't already on the WorkItem
+                }
+            }
+        )
+        # --- Stage 7: Project (Select final fields and remove temporary lookup data) ---
+        # This ensures the output matches your WorkItemWithProjectAndClientName model
+        pipeline.append(
+            {
+                "$project": {
+                    "project_data_array": 0,  # Exclude the temporary project array
+                    "client_data_array": 0,  # Exclude the temporary client array
+                    # All other fields from the original WorkItem (and added fields) will be kept
+                    # because $addFields doesn't remove them.
+                    # If you need to be very explicit about which WorkItem fields to keep:
+                    # "_id": 1, "user_id": 1, "name": 1, "project_id": 1, ... etc.
+                    # "project_name": 1, "client_name": 1
+                }
+            }
+        )
+
+        # --- Stage 8: Limit to 1 (since we matched by ID, just to be safe) ---
+        pipeline.append({"$limit": 1})
+
+        logger.debug(f"CRUDWorkItem get_single_with_details Pipeline: {pipeline}")
+
+        # --- Execute pipeline ---
+        cursor = collection.aggregate(pipeline)
+        results_list = await cursor.to_list(length=1)  # Expect 0 or 1 result
+
+        if not results_list:
+            logger.debug(
+                f"CRUDWorkItem: WorkItem with ID {item_id} not found for user {user_id} after aggregation."
+            )
+            return None
+
+        # The result is a dictionary
+        doc = results_list[0]
+        logger.info(
+            f"CRUDWorkItem: Fetched WorkItem {item_id} with details for user {user_id}"
+        )
+
+        # --- Parse into the specific Pydantic model ---
+        try:
+            return WorkItemWithProjectName(**doc)
+        except Exception as parse_error:
+            logger.error(
+                f"Failed to parse aggregated result for WorkItem {item_id} into Pydantic model: {parse_error}",
+                exc_info=True,
+            )
+            logger.error(f"Data that failed parsing: {doc}")
+            return None  # Or raise an internal error
 
 
 # Instantiate the specific CRUD class for WorkItems

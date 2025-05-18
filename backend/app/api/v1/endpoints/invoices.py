@@ -57,7 +57,7 @@ async def create_invoice_endpoint(
             db=db, user_id=user_id, request=request_body
         )
         background_tasks.add_task(
-            generate_and_store_invoice_pdf,
+            pdf_generator.generate_and_store_invoice_pdf,
             db=db,  # Pass DB connection if task needs it (or create new one)
             invoice_id=created_invoice_db.id,
             user_id=user_id,  # Pass user_id for fetching your_details if needed

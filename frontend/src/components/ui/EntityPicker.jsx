@@ -42,10 +42,6 @@ export const EntityPicker = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  console.log(
-    "EntityPicker RENDERED. selectedDisplayValue:",
-    selectedDisplayValue,
-  );
   const debouncedSetSearchTerm = useMemo(
     () => debounce((term) => setSearchTerm(term), 300),
     [],

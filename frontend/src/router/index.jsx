@@ -19,10 +19,9 @@ import LoginPage from "../pages/LoginPage";
 import ProjectFormPage from "../features/projects/ProjectFormPage"; // Import Project Form page
 import ClientListPage from "../features/clients/ClientListPage";
 import ProjectListPage from "../features/projects/ProjectListPage";
-import AddProjectPage from "../features/projects/AddProjectPage";
 import WorkItemListPage from "../features/workItems/WorkItemListPage";
-import AddWorkItemPage from "../features/workItems/AddWorkItemPage";
 import CreateInvoicePage from "../features/invoices/CreateInvoicePage";
+import WorkItemFormPage from "../features/workItems/WorkItemFormPage";
 import InvoiceListPage from "../features/invoices/InvoiceListPage";
 // Import other pages as needed
 // import ProjectListPage from '../features/projects/ProjectListPage';
@@ -207,21 +206,23 @@ const AppRouter = () => {
           {/* Client Routes */}
           <Route path="clients" element={<ClientListPage />} />
           <Route path="clients/new" element={<AddClientPage />} />{" "}
-          {/* Add New Route */}
-          <Route
-            path="clients/:clientId/edit"
-            element={<EditClientPage />}
-          />{" "}
+          <Route path="clients/:clientId/edit" element={<EditClientPage />} />
+          {/* Project Routes */}
           <Route path="projects" element={<ProjectListPage />} />
           <Route path="projects/new" element={<ProjectFormPage />} />{" "}
-          {/* Add Mode */}
           <Route
             path="projects/:projectId/edit"
             element={<ProjectFormPage />}
           />
           <Route path="projects/:projectId" element={<ProjectFormPage />} />
+          {/* Work Item Routes */}
           <Route path="workItems" element={<WorkItemListPage />} />
-          <Route path="workItems/new" element={<AddWorkItemPage />} />
+          <Route path="workItems/new" element={<WorkItemFormPage />} />
+          <Route
+            path="workItems/:workItemId/edit"
+            element={<WorkItemFormPage />}
+          />
+          <Route path="workItems/:workItemId" element={<WorkItemFormPage />} />
           <Route path="invoices" element={<InvoiceListPage />} />
           <Route path="invoices/new" element={<CreateInvoicePage />} />
           {/* Other feature routes */}

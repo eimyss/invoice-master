@@ -119,6 +119,9 @@ class WorkItemWithProjectName(WorkItemInDBBase):  # Inherit common DB fields
     project_name: Optional[str] = Field(
         default=None, description="Name of the associated project"
     )
+    client_name: Optional[str] = Field(
+        default=None, description="Name of the associated client"
+    )
     # You could also add client_id here if needed from the project lookup
     # client_id_from_project: Optional[UUID] = Field(alias="clientIdFromProject", default=None)
 

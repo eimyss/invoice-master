@@ -83,30 +83,11 @@ async def read_workItems_endpoint(
         search=search,
         project_id=project_id,
     )
-    logger.info(
-        f"Data being returned from CRUD function (type: {type(results_from_crud[0]) if results_from_crud else 'empty'}):"
-    )
-    # Log differently if they are already Pydantic models
-    try:
-        import json
-
-        # Use model_dump for Pydantic V2 models
-        log_output = json.dumps(
-            [item.model_dump() for item in results_from_crud[:5]], indent=2, default=str
-        )
-        logger.info(log_output)
-        if len(results_from_crud) > 5:
-            logger.info("... (results truncated)")
-    except Exception as log_e:
-        logger.error(f"Could not serialize results for logging: {log_e}")
-        logger.info(f"Raw results list: {results_from_crud}")
-    # -----------------------------------------------------
-
-    # *** FIX: Return the list directly if CRUD already parsed it ***
     return results_from_crud
 
 
-@router.get("/{workItem_id}", response_model=WorkItem)
+# since this is single request, we aggregate fields from other stuff
+@router.get("/{workItem_id}", response_model=WorkItemWithProjectName)
 async def read_workItem_by_id_endpoint(
     *, workItem_id: UUID, db: Database, current_user: CurrentUser
 ):
@@ -117,7 +98,9 @@ async def read_workItem_by_id_endpoint(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid user"
         )
     logger.info(f"User {user_id} fetching workItem ID: {workItem_id}")
-    workItem = await crud_workItem.get(db=db, id=workItem_id, user_id=user_id)
+    workItem = await crud_workItem.get_single_with_details(
+        db=db, item_id=workItem_id, user_id=user_id
+    )
     if not workItem:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
