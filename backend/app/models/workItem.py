@@ -24,7 +24,7 @@ class TimeEntry(BaseModel):
         default=0, description="Calculated amount based on other fields"
     )
     price_per_hour: float = Field(default=0, description="Price per hour for this item")
-
+    date: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -39,6 +39,7 @@ class WorkItemBase(BaseModel):
     is_invoiced: Optional[bool] = False
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
+    date: Optional[datetime] = None
     project_id: UUID = Field(
         ..., description="ID of the client this project belongs to"
     )
