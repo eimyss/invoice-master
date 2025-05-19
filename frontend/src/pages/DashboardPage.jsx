@@ -21,7 +21,7 @@ import {
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css"; // Import default react-calendar styles
 import "../calendar-dark.css"; // Import your custom dark theme overrides
-
+import HoursSummaryWidget from "../features/dashboard/HoursSummaryWidget";
 // --- Mock Data ---
 const currentMonthStats = {
   hours: 145,
@@ -163,12 +163,7 @@ const DashboardPage = () => {
           changeData={revenueChange}
         />
         {/* Add more cards as needed */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400">Placeholder Card 1</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400">Placeholder Card 2</p>
-        </div>
+        <HoursSummaryWidget />
       </div>
 
       {/* Chart and Calendar Section */}
