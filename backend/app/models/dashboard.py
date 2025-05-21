@@ -20,3 +20,6 @@ class HoursSummaryResponse(BaseModel):
     daily_hours_current_month: List[DailyHours] = Field(
         default_factory=list
     )  # Option 2: List of objects (often better for charts)
+    active_work_dates_current_month: List[date] = Field(
+        default_factory=list
+    )  # Option 2: List of objects (often better for charts)

@@ -1,13 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  ClockIcon,
-  CurrencyEuroIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  BriefcaseIcon, // For projects/clients worked on
-  DocumentCheckIcon, // For invoices created
-} from "@heroicons/react/24/outline";
+import { ClockIcon, CurrencyEuroIcon } from "@heroicons/react/24/outline";
 import {
   LineChart,
   Line,
@@ -28,13 +21,6 @@ import StatCardWidget from "../features/dashboard/StatCardWidget";
 // --- Mock Data ---
 
 // Mock calendar events (use Date objects)
-const calendarEvents = [
-  { date: new Date(2024, 2, 5), type: "invoice", title: "Inv #2024-003" }, // March 5th (month is 0-indexed)
-  { date: new Date(2024, 2, 8), type: "work", title: "Project Alpha" }, // March 8th
-  { date: new Date(2024, 2, 15), type: "work", title: "Project Beta" }, // March 15th
-  { date: new Date(2024, 2, 16), type: "work", title: "Project Beta" }, // March 16th
-  { date: new Date(2024, 2, 20), type: "invoice", title: "Inv #2024-004" }, // March 20th
-];
 // --- End Mock Data ---
 
 // Helper function to calculate percentage change
@@ -46,7 +32,12 @@ const calculateChange = (current, previous) => {
     type: change >= 0 ? "increase" : "decrease",
   };
 };
-
+const getMonthName = (date, locale = "en-US", monthFormat = "short") => {
+  if (!(date instanceof Date) || isNaN(date)) {
+    return ""; // Return empty string for invalid dates
+  }
+  return date.toLocaleString(locale, { month: monthFormat });
+};
 const DashboardPage = () => {
   const {
     data: summary,
@@ -59,12 +50,28 @@ const DashboardPage = () => {
     staleTime: 1000 * 60 * 15, // Cache for 15 minutes
     // refetchOnWindowFocus: false, // Optional: disable refetch on window focus if data isn't too volatile
   });
+  const dateThisMonth = new Date();
+  var dateLastMonth = new Date();
+  dateLastMonth.setMonth(dateThisMonth.getMonth() - 1);
+  var dateMoreLastMonth = new Date();
+  dateMoreLastMonth.setMonth(dateThisMonth.getMonth() - 2);
 
   const chartData = [
-    { name: "Jan", hours: 110 },
-    { name: "Feb", hours: 135 },
-    { name: "Mar", hours: summary?.current_month_total_hours }, // Use current month's data
+    {
+      name: getMonthName(dateMoreLastMonth),
+      hours: summary?.previous_month_total_hours,
+    },
+    {
+      name: getMonthName(dateLastMonth),
+      hours: summary?.previous_month_total_hours,
+    },
+    {
+      name: getMonthName(dateThisMonth),
+      hours: summary?.current_month_total_hours,
+    }, // Use current month's data
   ];
+
+  const calendarEvents = summary?.active_work_dates_current_month || []; // Mock data for calendar events
   const { userInfo } = useAuth(); // Get user info if needed
   const [calendarDate, setCalendarDate] = useState(new Date()); // State for calendar
 
@@ -85,10 +92,7 @@ const DashboardPage = () => {
   const tileContent = ({ date, view }) => {
     if (view === "month") {
       const event = calendarEvents.find(
-        (e) =>
-          e.date.getDate() === date.getDate() &&
-          e.date.getMonth() === date.getMonth() &&
-          e.date.getFullYear() === date.getFullYear(),
+        (dateString) => dateString === date.toISOString().slice(0, 10),
       );
       // Return null or a marker element
       return event ? (
@@ -101,14 +105,15 @@ const DashboardPage = () => {
   // Function to add class names for styling event markers
   const tileClassName = ({ date, view }) => {
     if (view === "month") {
-      const event = calendarEvents.find(
-        (e) =>
-          e.date.getDate() === date.getDate() &&
-          e.date.getMonth() === date.getMonth() &&
-          e.date.getFullYear() === date.getFullYear(),
-      );
-      if (event) {
-        return event.type === "invoice" ? "has-event has-invoice" : "has-event";
+      if (calendarEvents.length > 0) {
+        const event = calendarEvents.find(
+          (dateString) => dateString === date.toISOString().slice(0, 10),
+        );
+        if (event) {
+          return event.type === "invoice"
+            ? "has-event has-invoice"
+            : "has-event";
+        }
       }
     }
     return null;
@@ -198,6 +203,7 @@ const DashboardPage = () => {
             className="!border-0 !w-full !bg-transparent" // Use ! to force override defaults if needed
             tileContent={tileContent} // Add markers/content
             tileClassName={tileClassName} // Add classes for styling markers
+            //onClickDay={}
             // locale="de-DE" // Optional: Set locale if needed
           />
           {/* Optional: Display selected date or events for the date */}

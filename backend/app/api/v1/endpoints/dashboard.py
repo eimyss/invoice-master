@@ -164,6 +164,63 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
         daily_hours_list.append(
             DailyHours(day=day_date, hours=doc.get("daily_total_hours", 0.0))
         )
+
+    pipeline_distinct_work_dates_current_month = [
+        {
+            "$match": {
+                "user_id": user_id,
+                "date": {
+                    "$gte": current_month_start,
+                    "$lt": next_month_start,
+                },  # Match WorkItems in current month
+            }
+        },
+        {
+            "$group": {
+                # Group by the date part only to get distinct dates
+                "_id": {
+                    "year": {"$year": {"date": "$date", "timezone": "UTC"}},
+                    "month": {"$month": {"date": "$date", "timezone": "UTC"}},
+                    "day": {"$dayOfMonth": {"date": "$date", "timezone": "UTC"}},
+                }
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,  # Exclude the default _id from group stage
+                # Reconstruct the date object or string
+                "work_date": {
+                    "$dateFromParts": {  # For MongoDB 3.6+
+                        "year": "$_id.year",
+                        "month": "$_id.month",
+                        "day": "$_id.day",
+                        "timezone": "UTC",  # Output as UTC datetime at midnight
+                    }
+                },
+                # If you prefer a string:
+                # "work_date_string": {
+                #    "$dateToString": {"format": "%Y-%m-%d", "date": {
+                #        "$dateFromParts": {"year": "$_id.year", "month": "$_id.month", "day": "$_id.day", "timezone": "UTC"}
+                #    }}
+                # }
+            }
+        },
+        {"$sort": {"work_date": 1}},  # Sort the dates
+    ]
+    distinct_dates_cursor = collection.aggregate(
+        pipeline_distinct_work_dates_current_month
+    )
+    active_work_dates_current_month: List[date] = []  # Store as Python date objects
+    async for doc in distinct_dates_cursor:
+        # doc will be like {'work_date': datetime.datetime(2023, 5, 8, 0, 0, tzinfo=timezone.utc)}
+        if doc.get("work_date") and isinstance(doc["work_date"], datetime):
+            active_work_dates_current_month.append(
+                doc["work_date"].date()
+            )  # Convert to date object
+
+    logger.info(
+        f"Distinct work dates for current month: {active_work_dates_current_month}"
+    )
     # If using Dict[str, float] for daily_hours_current_month:
     # daily_hours_dict = {doc["_id"]: doc.get("daily_total_hours", 0.0) async for doc in daily_results_cursor}
 
@@ -173,4 +230,5 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
         previous_month_total_hours=previous_month_total_hours,
         previous_month_total_revenue=previous_month_total_revenue,
         daily_hours_current_month=daily_hours_list,  # or daily_hours_dict
+        active_work_dates_current_month=active_work_dates_current_month,
     )

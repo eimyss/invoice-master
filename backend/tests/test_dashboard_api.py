@@ -181,6 +181,9 @@ async def test_get_hours_summary_authenticated_with_data(
         len(parsed_summary.daily_hours_current_month) == 1
     )  # Two distinct days with entries
 
+    assert (
+        len(parsed_summary.active_work_dates_current_month) == 1
+    )  # Two distinct days with entries
     # Find specific days (assuming list is sorted by date, which it should be from the pipeline)
     day5_entry = next(
         (
