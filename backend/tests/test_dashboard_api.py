@@ -172,7 +172,9 @@ async def test_get_hours_summary_authenticated_with_data(
 
     # Check totals
     assert parsed_summary.current_month_total_hours == pytest.approx(2.0)  # 5.5
+    assert parsed_summary.current_month_total_revenue == pytest.approx(240)  # 5.5
     assert parsed_summary.previous_month_total_hours == pytest.approx(8.5)  # 5.0
+    assert parsed_summary.previous_month_total_revenue == pytest.approx(1020)  # 5.0
 
     # Check daily hours for current month
     assert (

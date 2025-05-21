@@ -64,6 +64,9 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
                 "total_hours": {
                     "$sum": "$timeEntries.duration"
                 },  # Sum the nested duration
+                "total_revenue": {
+                    "$sum": "$timeEntries.calculatedAmount"
+                },  # Sum the nested duration
             }
         },
     ]
@@ -76,6 +79,9 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
         current_month_result[0]["total_hours"] if current_month_result else 0.0
     )
 
+    current_month_total_revenue = (
+        current_month_result[0]["total_revenue"] if current_month_result else 0.0
+    )
     # --- 2. Total hours for the previous month ---
     if current_month == 1:
         prev_month = 12
@@ -105,6 +111,9 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
                 "total_hours": {
                     "$sum": "$timeEntries.duration"
                 },  # Sum the nested duration
+                "total_revenue": {
+                    "$sum": "$timeEntries.calculatedAmount"
+                },  # Sum the nested duration
             }
         },
     ]
@@ -113,6 +122,9 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
     )
     previous_month_total_hours = (
         prev_month_result[0]["total_hours"] if prev_month_result else 0.0
+    )
+    previous_month_total_revenue = (
+        prev_month_result[0]["total_revenue"] if prev_month_result else 0.0
     )
 
     # --- 3. Daily hours for the current month ---
@@ -157,6 +169,8 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
 
     return HoursSummaryResponse(
         current_month_total_hours=current_month_total_hours,
+        current_month_total_revenue=current_month_total_revenue,
         previous_month_total_hours=previous_month_total_hours,
+        previous_month_total_revenue=previous_month_total_revenue,
         daily_hours_current_month=daily_hours_list,  # or daily_hours_dict
     )
