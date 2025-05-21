@@ -26,24 +26,18 @@ const formatXAxisDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }); // e.g., "May 08"
   } catch (e) {
-    console.error("Error");
+    console.error("Error", e);
     return dateString;
   }
 };
 
-const HoursSummaryWidget = () => {
-  const {
-    data: summary,
+const HoursSummaryWidget = ({ summary, isLoading, isError, error }) => {
+  console.log("HoursSummaryWidget RENDERED. Props:", {
+    summary,
     isLoading,
     isError,
     error,
-  } = useQuery({
-    queryKey: ["dashboardHoursSummary"], // Unique key for this query
-    queryFn: getHoursSummary,
-    staleTime: 1000 * 60 * 15, // Cache for 15 minutes
-    // refetchOnWindowFocus: false, // Optional: disable refetch on window focus if data isn't too volatile
   });
-
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md animate-pulse">
