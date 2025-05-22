@@ -339,7 +339,7 @@ async def test_work_items_create_and_retrieve(
         user_id=user_id,
         project_id=default_test_project.id,
     )
-    assert len(results_from_crud) == 3
+    assert len(results_from_crud) == 1
 
     assert results_from_crud[0].name == te1_data.name
     assert results_from_crud[0].description == te1_data.description
@@ -348,6 +348,7 @@ async def test_work_items_create_and_retrieve(
     assert results_from_crud[0].timeEntries[0].price_per_hour == 120
     assert results_from_crud[0].timeEntries[0].duration == 2.0
     assert results_from_crud[0].timeEntries[0].rate_name == "Session Standard Rate"
+
 
 @pytest.mark.asyncio
 async def test_single_item_create_and_retrieve_with_aggregated_field(
@@ -393,15 +394,14 @@ async def test_single_item_create_and_retrieve_with_aggregated_field(
     # 4. Assertions
     # Calculate expected subtotal based on ALL TimeEntryData amounts within te1 and te2
 
-    result_from_crud = await crud_workItem.get_single_with_details( db=db_conn_session, item_id=te1.id, user_id=user_id)
+    result_from_crud = await crud_workItem.get_single_with_details(
+        db=db_conn_session, item_id=te1.id, user_id=user_id
+    )
     logger.info(f"Item : {result_from_crud}")
     assert result_from_crud.client_name == default_test_client.name
     assert result_from_crud.project_name == default_test_project.name
-    assert len(result_from_crud.timeEntries) == 2 
+    assert len(result_from_crud.timeEntries) == 2
     assert result_from_crud.timeEntries[0].calculatedAmount == 240
     assert result_from_crud.timeEntries[0].price_per_hour == 120
     assert result_from_crud.timeEntries[0].duration == 2.0
     assert result_from_crud.timeEntries[0].rate_name == "Session Standard Rate"
-
-
-

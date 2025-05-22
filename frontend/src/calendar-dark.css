@@ -18,14 +18,26 @@
 .react-calendar__tile.has-event abbr {
   @apply relative;
 }
-.react-calendar__tile.has-event abbr::after {
-  content: "";
-  @apply absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-green-400 rounded-full;
-}
 .react-calendar__tile.has-invoice abbr::after {
   @apply !bg-purple-400; /* Different color for invoice events */
 }
+.react-calendar__tile.has-event abbr {
+  /* Using Tailwind's @apply directive */
+  @apply !text-green-500 dark:!text-green-400 font-bold; /* Ensure sufficient contrast in both modes */
+  /* Or using standard CSS:
+  color: #22c55e !important; // Example green, adjust as needed
+  font-weight: bold !important; // Make it stand out
+  */
+}
 
+/* Optional: Style for invoice-specific event dates if you still use that class */
+.react-calendar__tile.has-invoice abbr {
+  @apply !text-purple-500 dark:!text-purple-400 font-bold;
+  /* Standard CSS:
+  color: #a855f7 !important; // Example purple
+  font-weight: bold !important;
+  */
+}
 /* Basic dark theme adaptation for react-calendar - Adjust as needed */
 .dark .react-calendar {
   @apply !bg-gray-800 !border-gray-700 !text-gray-200;

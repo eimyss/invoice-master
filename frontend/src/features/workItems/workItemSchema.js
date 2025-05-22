@@ -70,6 +70,7 @@ export const workItemSchema = z.object({
   date_from: z.date().optional().nullable(),
   date_to: z.date().optional().nullable(),
 
+  date: z.date(),
   start_date: z.date().optional().nullable(),
   end_date: z.date().optional().nullable(),
 

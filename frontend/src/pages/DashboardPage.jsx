@@ -1,13 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  ClockIcon,
-  CurrencyEuroIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  BriefcaseIcon, // For projects/clients worked on
-  DocumentCheckIcon, // For invoices created
-} from "@heroicons/react/24/outline";
+import { ClockIcon, CurrencyEuroIcon } from "@heroicons/react/24/outline";
 import {
   LineChart,
   Line,
@@ -18,35 +11,16 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { getHoursSummary } from "../services/dashboardService";
+import { useQuery } from "@tanstack/react-query";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css"; // Import default react-calendar styles
 import "../calendar-dark.css"; // Import your custom dark theme overrides
-
+import HoursSummaryWidget from "../features/dashboard/HoursSummaryWidget";
+import StatCardWidget from "../features/dashboard/StatCardWidget";
 // --- Mock Data ---
-const currentMonthStats = {
-  hours: 145,
-  revenue: 7250.5,
-};
-
-const previousMonthStats = {
-  hours: 130,
-  revenue: 6800.0,
-};
-
-const chartData = [
-  { name: "Jan", hours: 110 },
-  { name: "Feb", hours: 135 },
-  { name: "Mar", hours: currentMonthStats.hours }, // Use current month's data
-];
 
 // Mock calendar events (use Date objects)
-const calendarEvents = [
-  { date: new Date(2024, 2, 5), type: "invoice", title: "Inv #2024-003" }, // March 5th (month is 0-indexed)
-  { date: new Date(2024, 2, 8), type: "work", title: "Project Alpha" }, // March 8th
-  { date: new Date(2024, 2, 15), type: "work", title: "Project Beta" }, // March 15th
-  { date: new Date(2024, 2, 16), type: "work", title: "Project Beta" }, // March 16th
-  { date: new Date(2024, 2, 20), type: "invoice", title: "Inv #2024-004" }, // March 20th
-];
 // --- End Mock Data ---
 
 // Helper function to calculate percentage change
@@ -58,38 +32,46 @@ const calculateChange = (current, previous) => {
     type: change >= 0 ? "increase" : "decrease",
   };
 };
-
-// Helper component for Stat Cards
-const StatCard = ({ title, value, icon: Icon, changeData }) => (
-  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-    <div className="flex items-center justify-between mb-3">
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-        {title}
-      </p>
-      <Icon className="h-6 w-6 text-gray-400 dark:text-gray-500" />
-    </div>
-    <p className="text-3xl font-semibold text-gray-900 dark:text-white mb-1">
-      {value}
-    </p>
-    {changeData && changeData.value !== null && (
-      <div
-        className={`flex items-center text-sm ${changeData.type === "increase" ? "text-green-500" : "text-red-500"}`}
-      >
-        {changeData.type === "increase" ? (
-          <ArrowUpIcon className="h-4 w-4 mr-1" />
-        ) : (
-          <ArrowDownIcon className="h-4 w-4 mr-1" />
-        )}
-        {changeData.value}%{" "}
-        {changeData.type === "increase" ? "Increase" : "Decrease"} vs last month
-      </div>
-    )}
-    {!changeData && <div className="h-5"></div>}{" "}
-    {/* Placeholder for alignment */}
-  </div>
-);
-
+const getMonthName = (date, locale = "en-US", monthFormat = "short") => {
+  if (!(date instanceof Date) || isNaN(date)) {
+    return ""; // Return empty string for invalid dates
+  }
+  return date.toLocaleString(locale, { month: monthFormat });
+};
 const DashboardPage = () => {
+  const {
+    data: summary,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["dashboardHoursSummary"], // Unique key for this query
+    queryFn: getHoursSummary,
+    staleTime: 1000 * 60 * 15, // Cache for 15 minutes
+    // refetchOnWindowFocus: false, // Optional: disable refetch on window focus if data isn't too volatile
+  });
+  const dateThisMonth = new Date();
+  var dateLastMonth = new Date();
+  dateLastMonth.setMonth(dateThisMonth.getMonth() - 1);
+  var dateMoreLastMonth = new Date();
+  dateMoreLastMonth.setMonth(dateThisMonth.getMonth() - 2);
+
+  const chartData = [
+    {
+      name: getMonthName(dateMoreLastMonth),
+      hours: summary?.previous_month_total_hours,
+    },
+    {
+      name: getMonthName(dateLastMonth),
+      hours: summary?.previous_month_total_hours,
+    },
+    {
+      name: getMonthName(dateThisMonth),
+      hours: summary?.current_month_total_hours,
+    }, // Use current month's data
+  ];
+
+  const calendarEvents = summary?.active_work_dates_current_month || []; // Mock data for calendar events
   const { userInfo } = useAuth(); // Get user info if needed
   const [calendarDate, setCalendarDate] = useState(new Date()); // State for calendar
 
@@ -98,22 +80,19 @@ const DashboardPage = () => {
     : "Loading User...";
   console.log("Layout: Displaying username as:", displayUsername);
   const hoursChange = calculateChange(
-    currentMonthStats.hours,
-    previousMonthStats.hours,
+    summary?.current_month_total_hours || 0,
+    summary?.previous_month_total_hours || 0,
   );
   const revenueChange = calculateChange(
-    currentMonthStats.revenue,
-    previousMonthStats.revenue,
+    summary?.current_month_total_revenue || 0,
+    summary?.previous_month_total_revenue || 0,
   );
 
   // Function to add markers to calendar tiles
   const tileContent = ({ date, view }) => {
     if (view === "month") {
       const event = calendarEvents.find(
-        (e) =>
-          e.date.getDate() === date.getDate() &&
-          e.date.getMonth() === date.getMonth() &&
-          e.date.getFullYear() === date.getFullYear(),
+        (dateString) => dateString === date.toISOString().slice(0, 10),
       );
       // Return null or a marker element
       return event ? (
@@ -126,14 +105,15 @@ const DashboardPage = () => {
   // Function to add class names for styling event markers
   const tileClassName = ({ date, view }) => {
     if (view === "month") {
-      const event = calendarEvents.find(
-        (e) =>
-          e.date.getDate() === date.getDate() &&
-          e.date.getMonth() === date.getMonth() &&
-          e.date.getFullYear() === date.getFullYear(),
-      );
-      if (event) {
-        return event.type === "invoice" ? "has-event has-invoice" : "has-event";
+      if (calendarEvents.length > 0) {
+        const event = calendarEvents.find(
+          (dateString) => dateString === date.toISOString().slice(0, 10),
+        );
+        if (event) {
+          return event.type === "invoice"
+            ? "has-event has-invoice"
+            : "has-event";
+        }
       }
     }
     return null;
@@ -150,25 +130,31 @@ const DashboardPage = () => {
 
       {/* Stat Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
+        <StatCardWidget
           title="Hours This Month"
-          value={currentMonthStats.hours}
-          icon={ClockIcon}
+          value={summary?.current_month_total_hours || 0}
+          Icon={ClockIcon}
           changeData={hoursChange}
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
         />
-        <StatCard
+        <StatCardWidget
           title="Revenue This Month"
-          value={`€ ${currentMonthStats.revenue.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          icon={CurrencyEuroIcon}
+          value={`€ ${summary?.current_month_total_revenue.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          Icon={CurrencyEuroIcon}
           changeData={revenueChange}
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
         />
         {/* Add more cards as needed */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400">Placeholder Card 1</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400">Placeholder Card 2</p>
-        </div>
+        <HoursSummaryWidget
+          summary={summary}
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
+        />
       </div>
 
       {/* Chart and Calendar Section */}
@@ -217,6 +203,7 @@ const DashboardPage = () => {
             className="!border-0 !w-full !bg-transparent" // Use ! to force override defaults if needed
             tileContent={tileContent} // Add markers/content
             tileClassName={tileClassName} // Add classes for styling markers
+            //onClickDay={}
             // locale="de-DE" // Optional: Set locale if needed
           />
           {/* Optional: Display selected date or events for the date */}
