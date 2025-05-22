@@ -141,8 +141,6 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
             "$group": {
                 # Group by the date part only (year, month, day)
                 "_id": {
-                    # "$dateToString": {"format": "%Y-%m-%d", "date": "$date", "timezone": "UTC"} # Option A: Group by string date
-                    # Option B: Group by date components (better for direct date object construction)
                     "year": {"$year": {"date": "$date", "timezone": "UTC"}},
                     "month": {"$month": {"date": "$date", "timezone": "UTC"}},
                     "day": {"$dayOfMonth": {"date": "$date", "timezone": "UTC"}},
@@ -197,12 +195,6 @@ async def get_hours_summary(*, db: Database, current_user: CurrentUser):
                         "timezone": "UTC",  # Output as UTC datetime at midnight
                     }
                 },
-                # If you prefer a string:
-                # "work_date_string": {
-                #    "$dateToString": {"format": "%Y-%m-%d", "date": {
-                #        "$dateFromParts": {"year": "$_id.year", "month": "$_id.month", "day": "$_id.day", "timezone": "UTC"}
-                #    }}
-                # }
             }
         },
         {"$sort": {"work_date": 1}},  # Sort the dates
