@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 from motor.motor_asyncio import AsyncIOMotorDatabase
 import logging
-from datetime import datetime
+from datetime import datetime, UTC, date
 from app.crud.base import CRUDBase
 from app.models.workItem import (
     WorkItemCreate,
@@ -14,6 +14,10 @@ from app.models.workItem import (
 )
 from app.models.client import Client  # Import Client model for embedding shape
 
+from app.services.event_service import (
+    log_event,
+    EventType,
+)  # Import the service and enum
 from app.crud.crud_project import crud_project  # To use the project CRUD instance
 
 logger = logging.getLogger(__name__)
@@ -104,9 +108,21 @@ class CRUDWorkItem(CRUDBase[WorkItemInDB, WorkItemCreate, WorkItemUpdate]):
             f"CRUDWorkItem ({self.model.__name__}): Attempting to insert processed data for user {user_id}"
         )
         result = await collection.insert_one(insert_data)
-
         created_doc = await collection.find_one({"_id": result.inserted_id})
         if created_doc:
+            await log_event(
+                db=db,
+                event_type=EventType.WORK_ITEM_CREATED,
+                user_id=user_id,
+                relevant_date=datetime.now(UTC).date(),
+                description=f"Work Item '{db_obj.name}' created.",
+                related_entity_id=result.inserted_id,
+                related_entity_type="WorkItem",
+                details={
+                    "project_id": str(db_obj.project_id),
+                    "number_of_time_logs": len(db_obj.timeEntries),
+                },
+            )
             logger.info(
                 f"CRUDWorkItem ({self.model.__name__}): Created successfully with ID: {created_doc['_id']}"
             )

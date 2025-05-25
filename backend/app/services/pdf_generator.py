@@ -9,7 +9,7 @@ from typing import Dict, Any
 
 from uuid import UUID
 from motor.motor_asyncio import AsyncIOMotorDatabase  # Need DB type hint
-from app.crud import crud_invoice  # Need CRUD to fetch/update
+from app.crud.crud_invoice import crud_invoice  # Need CRUD to fetch/update
 from app.services import pdf_generator  # Import the actual generator function
 from app.core.config import settings  # To get your details
 from app.models.invoice import InvoiceInDB  # Import the Invoice model
@@ -167,9 +167,7 @@ async def generate_and_store_invoice_pdf(
 
         # 5. Update the Invoice in DB with PDF content
         if pdf_bytes:
-            invoice_collection = crud_invoice.get_collection(
-                db
-            )  # Access collection via CRUD instance
+            invoice_collection = crud_invoice._get_collection(db)  # Invoice collection
             update_result = await invoice_collection.update_one(
                 {"_id": invoice_id, "user_id": user_id},
                 {"$set": {"pdf_content": pdf_bytes, "updated_at": datetime.utcnow()}},

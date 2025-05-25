@@ -11,6 +11,7 @@ import {
   DocumentTextIcon,
   SunIcon,
   MoonIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 
 // ThemeToggle component remains the same
@@ -86,6 +87,7 @@ const Layout = () => {
     { name: "Invoices", href: "/invoices", icon: DocumentTextIcon },
     { name: "Projects", href: "/projects", icon: BriefcaseIcon },
     { name: "Work Items", href: "/workItems", icon: BanknotesIcon },
+    { name: "Events", href: "/events", icon: ExclamationTriangleIcon },
   ];
 
   // --- Explicit Loading/Auth Check ---

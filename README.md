@@ -1,93 +1,259 @@
-# Expenses Gemini
+# RechnungMeister (InvoiceMaster) - Modern Invoicing Application
 
+RechnungMeister is a modern, full-stack invoicing application designed for freelancers and small businesses to manage clients, projects, work items (time entries), and generate professional PDF invoices. It features a React/Tailwind CSS frontend and a Python FastAPI backend with MongoDB storage, along with Authentik integration for authentication.
 
+## Features
 
-## Getting started
+- **Authentication:** Secure login via an external Authentik server (OIDC/OAuth2).
+- **Multi-User Support:** Designed for individual freelancers or small teams.
+- **Dashboard Overview:** At-a-glance view of key metrics like monthly hours, revenue, pending invoices.
+- **Client Management:** CRUD operations for clients, including addresses, contact details, and VAT IDs (USt-IdNr.).
+- **Project Management:** CRUD operations for projects, linkable to clients, with definable rates per project.
+- **Work Item / Time Tracking:**
+  - Log work items (time entries) against projects, specifying duration and selecting applicable rates.
+  - (Future) Calendar overview for visualizing work logs.
+- **Invoice Generation:**
+  - Create invoices from selected uninvoiced work items for a client/project.
+  - Automatic calculation of line items, subtotals, taxes (MwSt.), and grand totals.
+  - Sequential and unique invoice numbering (e.g., RE-YYYY-NNNN).
+  - **PDF Generation:** Creates professional, German-standard compliant PDF invoices.
+  - Stores generated PDF with the invoice record in the database.
+- **Invoice Management:**
+  - List of all generated invoices with status (Draft, Sent, Paid, Overdue).
+  - Track payment status.
+- **Email Preparation:** Generates an email template with invoice details and attaches the PDF for easy sending to clients.
+- **Event Logging:** Tracks key application events (e.g., invoice created, work item logged) for auditing or calendar display.
+- **Modern UI:** Minimalist and responsive interface built with React and Tailwind CSS.
+- **API:** Robust FastAPI backend providing a clear API for the frontend.
+- **Extensible:** Designed with best practices to be easily extensible for future features.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Tech Stack
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+**Frontend:**
 
-## Add your files
+- **React.js (with Vite):** For building the user interface.
+- **Tailwind CSS:** Utility-first CSS framework for styling.
+- **TanStack Query (React Query):** For server state management (data fetching, caching, mutations).
+- **React Hook Form & Zod:** For form handling and validation.
+- **React Router:** For client-side routing.
+- **Axios:** For making HTTP requests to the backend.
+- **MSW (Mock Service Worker):** For API mocking during frontend testing.
+- **Vitest & React Testing Library:** For unit and integration testing.
+- **(Libraries for UI components like Date Pickers, Modals, Charts - e.g., `react-datepicker`, `recharts`)**
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+**Backend:**
 
-```
-cd existing_repo
-git remote add origin http://gitlab.eimantas.home/root/expenses-gemini.git
-git branch -M main
-git push -uf origin main
-```
+- **Python 3.10+**
+- **FastAPI:** Modern, fast web framework for building APIs.
+- **Pydantic:** For data validation and settings management.
+- **Motor:** Asynchronous MongoDB driver.
+- **Uvicorn:** ASGI server for running FastAPI.
+- **python-jose & passlib:** For JWT handling (though primary auth is via Authentik).
+- **WeasyPrint & Jinja2:** For PDF generation from HTML templates.
+- **Pytest:** For backend testing.
 
-## Integrate with your tools
+**Database:**
 
-- [ ] [Set up project integrations](http://gitlab.eimantas.home/root/expenses-gemini/-/settings/integrations)
+- **MongoDB:** NoSQL document database.
 
-## Collaborate with your team
+**Authentication:**
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+- **Authentik:** External OpenID Connect (OIDC) / OAuth 2.0 provider.
 
-## Test and Deploy
+**DevOps & Deployment (Planned):**
 
-Use the built-in continuous integration in GitLab.
+- **Docker & Docker Compose:** For containerization and local development setup.
+- **Kubernetes (K8s):** For orchestration and deployment in a server environment.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+## Project Structure
 
-***
+rechnung-meister/
+├── backend/ # FastAPI backend application
+│ ├── app/ # Main application code
+│ │ ├── api/ # API endpoints (routers)
+│ │ ├── core/ # Core logic (config, security, db connection)
+│ │ ├── crud/ # CRUD operations for database interaction
+│ │ ├── models/ # Pydantic models for data validation & schemas
+│ │ ├── services/ # Business logic services (PDF gen, email, events)
+│ │ └── templates/ # HTML templates for PDF generation
+│ ├── tests/ # Backend tests
+│ ├── .env.example
+│ ├── Dockerfile
+│ └── requirements.txt
+│
+├── frontend/ # React frontend application
+│ ├── public/
+│ ├── src/
+│ │ ├── assets/
+│ │ ├── components/ # Reusable UI components (generic)
+│ │ ├── contexts/ # React contexts (e.g., AuthContext)
+│ │ ├── features/ # Feature-specific components, pages, services
+│ │ ├── hooks/ # Custom React hooks
+│ │ ├── lib/ # Utility functions, API client setup
+│ │ ├── mocks/ # MSW mocks for testing
+│ │ ├── pages/ # Top-level page components (Dashboard, Login)
+│ │ ├── services/ # API service functions
+│ │ ├── setupTests.js # Test setup for Vitest
+│ │ ├── App.jsx
+│ │ └── main.jsx
+│ ├── .env.example
+│ ├── Dockerfile
+│ ├── index.html
+│ ├── package.json
+│ └── vite.config.js
+│
+├── .gitignore
+├── docker-compose.yml # For local development orchestration
+└── README.md # This file
 
-# Editing this README
+## Getting Started
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Prerequisites
 
-## Suggestions for a good README
+- Node.js (v18+ recommended) and npm/yarn
+- Python (v3.10+ recommended) and pip
+- Docker and Docker Compose
+- An instance of Authentik server (or willingness to mock auth for local dev without it)
+- MongoDB instance (can be run via Docker Compose)
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Local Development Setup
 
-## Name
-Choose a self-explaining name for your project.
+1. **Clone the Repository:**
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+    ```bash
+    git clone <your-repository-url>
+    cd rechnung-meister
+    ```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+2. **Backend Setup:**
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+    - Navigate to the `backend` directory: `cd backend`
+    - Create and activate a Python virtual environment:
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+      ```bash
+      python -m venv venv
+      source venv/bin/activate  # On Windows: venv\Scripts\activate
+      ```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+    - Install Python dependencies:
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+      ```bash
+      pip install -r requirements.txt
+      pip install -r requirements-dev.txt # For testing
+      ```
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+    - Create a `.env` file from `.env.example` and fill in your details:
+
+      ```bash
+      cp .env.example .env
+      # Edit .env with your MONGODB_URL, Authentik details, SECRET_KEY, etc.
+      # For local Docker Compose MongoDB, MONGODB_URL is usually mongodb://mongo:27017/your_db_name
+      ```
+
+3. **Frontend Setup:**
+
+    - Navigate to the `frontend` directory: `cd ../frontend`
+    - Install Node.js dependencies:
+
+      ```bash
+      npm install
+      ```
+
+    - Create a `.env` file from `.env.example` and fill in your details:
+
+      ```bash
+      cp .env.example .env
+      # Edit .env with VITE_API_BASE_URL (e.g., http://localhost:8000/api/v1)
+      # and your VITE_AUTHENTIK_... URLs and Client ID.
+      ```
+
+4. **Run with Docker Compose (Recommended for easy DB setup):**
+
+    - From the root `rechnung-meister/` directory:
+
+      ```bash
+      docker-compose up --build -d
+      ```
+
+    - This will start:
+      - MongoDB on port 27017 (by default).
+      - The FastAPI backend (usually on `http://localhost:8000`).
+      - The React frontend dev server (usually on `http://localhost:5173`).
+    - Access the frontend at `http://localhost:5173`.
+    - Access backend API docs at `http://localhost:8000/docs`.
+
+5. **Run Manually (If not using Docker Compose for backend/frontend dev servers):**
+    - **Start MongoDB:** Ensure your MongoDB instance is running.
+    - **Start Backend:**
+
+      ```bash
+      cd backend
+      source venv/bin/activate
+      # Set APP_ENV_FILE if you use specific .env files for local dev
+      # export APP_ENV_FILE=.env.local
+      uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+      ```
+
+    - **Start Frontend:**
+
+      ```bash
+      cd frontend
+      npm run dev
+      ```
+
+### Authentik Configuration
+
+For authentication to work, you need to configure an Application and a Provider in your Authentik instance:
+
+1. **Create an Application** in Authentik.
+2. **Create an OAuth2/OIDC Provider** linked to this application.
+    - **Client Type:** Public (for the React frontend).
+    - **Redirect URIs:** Add `http://localhost:5173/auth/callback` (for local frontend dev) and any other URIs for deployed environments.
+    - **Scopes:** Ensure `openid`, `email`, `profile`, and `offline_access` (if you want refresh tokens directly on frontend, though BFF is recommended) are enabled.
+    - Note the **Client ID**.
+    - Note the **OpenID Configuration URL** (e.g., `https://authentik.yourdomain.com/application/o/your-app-slug/.well-known/openid-configuration`). This will give you the `authorization_endpoint`, `token_endpoint`, `jwks_uri`, and `issuer`.
+3. Update your frontend (`.env`) and backend (`.env`) files with the correct Authentik URLs, Client ID, and Issuer.
+4. For the **Backend-for-Frontend (BFF) token exchange pattern**, your backend will also act as an OAuth2 client (potentially with the same Client ID if it's public, or a separate confidential Client ID and Secret). Ensure the `redirect_uri` used by the backend in the token exchange request matches one configured in Authentik.
+
+## Running Tests
+
+### Backend Tests
+
+- Ensure your test MongoDB is accessible.
+- Navigate to the `backend` directory.
+- Activate the virtual environment.
+- Run:
+
+  ```bash
+  python -m pytest
+  # Or just:
+  # pytest
+  ```
+
+### Frontend Tests
+
+- Navigate to the `frontend` directory.
+- Run:
+
+  ```bash
+  npm test
+  # For UI mode (if @vitest/ui is installed):
+  # npm run test:ui
+  # For coverage:
+  # npm run coverage
+  ```
+
+## PDF Invoice Templates
+
+- PDFs are generated from HTML templates using WeasyPrint.
+- Default templates are located in `backend/app/templates/`.
+- You can customize `invoice_default.html` and `invoice_style.css` or create new templates.
+- The `template_id` field on the `Invoice` model can be used to specify which template to use for rendering a particular invoice (future enhancement).
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+TODO
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## TODO

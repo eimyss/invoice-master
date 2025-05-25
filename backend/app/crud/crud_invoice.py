@@ -3,7 +3,10 @@ import logging
 from uuid import UUID
 from typing import List, Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
-
+from app.services.event_service import (
+    log_event,
+    EventType,
+)  # Import the service and enum
 from datetime import date, timedelta, datetime, time, timezone, UTC
 
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
@@ -192,7 +195,7 @@ class CRUDInvoice(
             "tax_rate": tax_rate,
             "tax_amount": tax_amount,
             "total_amount": total_amount,
-            "status": ItemStatus.CREATED,  # Set initial status
+            "status": ItemStatus.PROCESSED,
             "notes": request.notes,
             "client_snapshot": client_snapshot.model_dump(),
             "payment_date": None,  # date object (or None)
@@ -204,6 +207,20 @@ class CRUDInvoice(
             # This ensures the input data conforms to the logical model (with dates)
             db_invoice = InvoiceInDB(**invoice_data_for_model)
             logger.info("Invoice data validated successfully against Pydantic model.")
+            await log_event(
+                db=db,
+                event_type=EventType.INVOICE_CREATED,
+                user_id=user_id,
+                relevant_date=db_invoice.issue_date,  # Use invoice issue date
+                description=f"Invoice {db_invoice.invoice_number} created for client {db_invoice.client_snapshot.name if db_invoice.client_snapshot else 'N/A'}.",
+                related_entity_id=db_invoice.id,
+                related_entity_type="Invoice",
+                details={
+                    "invoice_number": db_invoice.invoice_number,
+                    "client_id": str(db_invoice.client_id),  # Store as string if needed
+                    "total_amount": db_invoice.total_amount,
+                },
+            )
         except Exception as validation_error:
             logger.error(
                 f"Pydantic validation failed creating InvoiceInDB: {validation_error}",

@@ -23,9 +23,7 @@ import WorkItemListPage from "../features/workItems/WorkItemListPage";
 import CreateInvoicePage from "../features/invoices/CreateInvoicePage";
 import WorkItemFormPage from "../features/workItems/WorkItemFormPage";
 import InvoiceListPage from "../features/invoices/InvoiceListPage";
-// Import other pages as needed
-// import ProjectListPage from '../features/projects/ProjectListPage';
-// import InvoiceListPage from '../features/invoices/InvoiceListPage';
+import EventListPage from "../features/events/EventListPage";
 
 // --- Auth Callback Component ---
 const AuthCallback = () => {
@@ -203,6 +201,7 @@ const AppRouter = () => {
         >
           <Route index element={<DashboardPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="events" element={<EventListPage />} />
           {/* Client Routes */}
           <Route path="clients" element={<ClientListPage />} />
           <Route path="clients/new" element={<AddClientPage />} />{" "}
