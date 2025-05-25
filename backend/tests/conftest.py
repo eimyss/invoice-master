@@ -167,7 +167,9 @@ async def default_test_client(
 ) -> ClientInDB:
     """Creates a default client once per test session."""
     print("SESSION FIXTURE: Creating default_test_client")
-    client_data = ClientCreate(name="Default Test Client Session")
+    client_data = ClientCreate(
+        name="Default Test Client Session", email="test@example.com"
+    )
     # Use the singleton crud_client instance for creation
     created_client = await crud_client.create(
         db=db_conn_session, obj_in=client_data, user_id=mock_user_id_session

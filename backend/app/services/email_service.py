@@ -4,6 +4,8 @@ from jinja2 import Environment, BaseLoader  # Use BaseLoader for string template
 from typing import Dict, Any
 from app.models.invoice import InvoiceInDB, InvoiceEmailRequest  # Import models
 
+from datetime import date, datetime
+
 logger = logging.getLogger(__name__)
 
 # Setup Jinja2 environment for string templates
@@ -36,10 +38,8 @@ async def generate_invoice_email_content(
         if invoice.client_snapshot
         else "Client",
         "InvoiceNumber": invoice.invoice_number,
-        "TotalAmount": context["invoice"][
-            "total_amount"
-        ],  # Use value already in context dict
-        "DueDate": context["invoice"]["due_date"],  # Use value already in context dict
+        "TotalAmount": invoice.total_amount,  # Use value already in context dict
+        "DueDate": invoice.due_date,  # Use value already in context dict
         "YourName": your_details.get("name", "Your Name"),
         "YourBankDetails": f"""
 Kontoinhaber: {your_details.get("bank_account_holder", "")}
@@ -56,9 +56,11 @@ Bank: {your_details.get("bank_name", "")}
     try:
         # Render Subject
         subject_template = string_template_env.from_string(
-            email_request.subject or "Invoice [InvoiceNumber]"
+            email_request.subject or "Invoice " + invoice.invoice_number
         )
+        logger.info(f"Rendered subject template: {subject_template}")
         subject = subject_template.render(context)
+        logger.info(f"Rendered subject: {subject}")
 
         # Render Body
         body_template = string_template_env.from_string(
@@ -87,4 +89,3 @@ Bank: {your_details.get("bank_name", "")}
 
 
 # --- Need datetime ---
-from datetime import date, datetime

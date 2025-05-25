@@ -15,7 +15,7 @@ from app.models.workItem import (
     ItemStatus,
     WorkItemInDB,
 )
-from app.models.invoice import InvoiceCreateRequest
+from app.models.invoice import InvoiceCreateRequest, InvoiceEmailRequest
 from app.crud.crud_workItem import crud_workItem
 from app.models.client import ClientInDB
 import logging
@@ -78,6 +78,10 @@ async def test_create_pdf_invoice_from_crud(
     assert created_invoice_db.notes == "this is test request"
     assert len(created_invoice_db.line_items) == 2
     assert created_invoice_db.pdf_content is not None
+    assert created_invoice_db.client_snapshot is not None
+    assert created_invoice_db.client_snapshot.id == default_test_client.id
+    assert created_invoice_db.client_snapshot.name == default_test_client.name
+    assert created_invoice_db.client_snapshot.email == default_test_client.email
 
     updated_te1 = await crud_workItem.get(
         db=db_conn_session, id=default_test_workItem.id, user_id=user_id
@@ -86,6 +90,24 @@ async def test_create_pdf_invoice_from_crud(
     assert updated_te1 is not None
     assert updated_te1.invoice_id == created_invoice_db.id
     assert updated_te1.status == ItemStatus.PROCESSED
+
+    your_details = {
+        "name": "Test Client",
+        "Address": "Test Address",
+    }  # Fetch details
+    invoice_email_request = InvoiceEmailRequest(
+        recipient_email=created_invoice_db.client_snapshot.email
+    )  # --- Setup Test Data ---
+    email_content = await email_service.generate_invoice_email_content(
+        invoice=created_invoice_db,
+        email_request=invoice_email_request,
+        your_details=your_details,
+    )
+    logger.info(f"Generated email content: {email_content}")
+    assert email_content is not None
+    assert (
+        email_content["subject"] == "Ihre Rechnung " + created_invoice_db.invoice_number
+    )
 
 
 @pytest.mark.asyncio
