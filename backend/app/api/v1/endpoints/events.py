@@ -1,9 +1,10 @@
 # backend/app/api/v1/endpoints/events.py
 import logging
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from typing import List, Optional, Annotated
 from datetime import date, datetime
 
+from uuid import UUID
 from app.api import deps
 from app.models.event import EventInDB  # Import your Event model
 from motor.motor_asyncio import AsyncIOMotorDatabase  # For type hinting
@@ -72,6 +73,28 @@ async def read_events(
         .limit(limit)
     )  # Sort by when logged
     events_dicts = await cursor.to_list(length=limit)
+
+    # Parse to Pydantic models for response
+    return [EventInDB(**event_doc) for event_doc in events_dicts]
+
+
+@router.get("/{event_id}", response_model=List[EventInDB])
+async def read_project_by_id_endpoint(
+    *, event_id: UUID, db: Database, current_user: CurrentUser
+):
+    """Get a specific event by ID."""
+    user_id = current_user.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=403, detail="Invalid user")
+
+    event_collection = db[EVENTS_COLLECTION_NAME]
+    query_filter = {"user_id": user_id, "_id": event_id}
+
+    logger.debug(f"Fetching events with filter: {query_filter}")
+    cursor = event_collection.find(query_filter).sort(
+        "timestamp", -1
+    )  # Sort by when logged
+    events_dicts = await cursor.to_list()
 
     # Parse to Pydantic models for response
     return [EventInDB(**event_doc) for event_doc in events_dicts]

@@ -65,7 +65,6 @@ const EventTable = ({ events, onViewEvent }) => {
               className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                {/* TODO: Link to event detail page */}
                 <Link to={`/events/${event._id}`}>{event.event_number}</Link>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
@@ -128,12 +127,10 @@ function EventListPage() {
       console.log("no Event ID provided");
       return;
     }
-    console.log("Viewing PDF for event:", eventId);
+    console.log("Viewing Info for event:", eventId);
     setIsLoadingEvent(true);
     setIsEventModalOpen(true); // Open modal immediately to show loading state
-    setEventFileName(
-      `Rechnung_${eventNumber}_${new Date().toISOString().split("T")[0]}.pdf`,
-    );
+    setEventFileName(`Viewing Event ${eventId}`);
 
     try {
       const event = await getEventById(eventId);
@@ -199,7 +196,7 @@ function EventListPage() {
           <div className="h-[80vh] w-full">
             {" "}
             {/* Set height for the viewer */}
-            <EventViewer event={singleEvent} />
+            <EventViewer event={singleEvent[0]} />
           </div>
         )}
         {!isLoadingEvent && !singleEvent && !isEventModalOpen && (
