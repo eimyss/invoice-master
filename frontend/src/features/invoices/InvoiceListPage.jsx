@@ -125,10 +125,10 @@ const InvoiceTable = ({
                 </button>
                 <button
                   onClick={() =>
-                    onPrepareEmail(invoice.id, invoice.client_snapshot?.email)
+                    onPrepareEmail(invoice._id, invoice.client_snapshot?.email)
                   }
                   title="Prepare Email"
-                  disabled={isLoadingEmail === invoice.id} // Disable only for the one being loaded
+                  disabled={isLoadingEmail === invoice._id} // Disable only for the one being loaded
                   className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50"
                 >
                   <EnvelopeIcon className="h-5 w-5 inline" />

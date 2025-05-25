@@ -6,9 +6,15 @@ from httpx import ASGITransport, AsyncClient
 from httpx import AsyncClient
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from uuid import uuid4
-from datetime import datetime
 import asyncio
 
+from datetime import datetime, date, timedelta, timezone, UTC
+from app.models.workItem import (
+    WorkItemInDB,
+    WorkItemCreate,
+    TimeEntry as TimeEntryData,
+    ItemStatus,
+)  # Renamed TimeEntryCreate to TimeEntryData
 from app.models.client import ClientCreate, ClientInDB
 from app.models.project import ProjectCreate, ProjectInDB, Rate as ProjectRate
 
@@ -19,10 +25,9 @@ from app.models.workItem import (
     TimeEntry,
     ItemStatus,
 )  # Added TimeEntry for clarity
-from app.crud import (
-    crud_workItem,
-)  # Import the singleton instances#
 from app.crud.crud_client import crud_client
+
+from app.crud.crud_workItem import crud_workItem
 from app.crud.crud_project import crud_project
 from app.main import app
 from app.core.config import settings
@@ -162,7 +167,9 @@ async def default_test_client(
 ) -> ClientInDB:
     """Creates a default client once per test session."""
     print("SESSION FIXTURE: Creating default_test_client")
-    client_data = ClientCreate(name="Default Test Client Session")
+    client_data = ClientCreate(
+        name="Default Test Client Session", email="test@example.com"
+    )
     # Use the singleton crud_client instance for creation
     created_client = await crud_client.create(
         db=db_conn_session, obj_in=client_data, user_id=mock_user_id_session
@@ -189,6 +196,41 @@ async def default_test_project(
         db=db_conn_session, obj_in=project_data, user_id=mock_user_id_session
     )
     return created_project
+
+
+@pytest_asyncio.fixture(scope="function")  # Changed scope to "session"
+async def default_test_workItem(
+    db_conn_session: AsyncIOMotorDatabase,
+    default_test_client: ClientInDB,
+    mock_user_id_session: str,
+    default_test_project: ProjectInDB,
+) -> WorkItemInDB:
+    """Creates a default project once per test session, linked to the default client."""
+    time_entry_data_1 = TimeEntryData(
+        description="Session Work item 1 task 1",
+        rate_name="Session Standard Rate",
+        duration=2.0,
+        price_per_hour=120.0,
+    )
+    time_entry_data_2 = TimeEntryData(
+        description="Session Work item 1 task 2",
+        rate_name="Session Standard Rate",
+        duration=3.0,
+        price_per_hour=120.0,
+    )
+    te1_data = WorkItemCreate(
+        project_id=default_test_project.id,
+        name="Work item 1",
+        description="Work item 1",
+        status=ItemStatus.CREATED,
+        timeEntries=[time_entry_data_2, time_entry_data_1],
+        start_date=datetime.now(UTC),
+        end_date=datetime.now(UTC) + timedelta(days=7),
+    )
+    te1 = await crud_workItem.create(
+        db=db_conn_session, obj_in=te1_data, user_id=mock_user_id_session
+    )
+    return te1
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)

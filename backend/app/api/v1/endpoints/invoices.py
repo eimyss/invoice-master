@@ -245,6 +245,8 @@ async def generate_email_preview_endpoint(
     current_user: CurrentUser,
 ):
     """Generates the subject and body for an invoice email based on a template."""
+
+    logger.info(f"getting email request for invoice: {invoice_id}")
     user_id = current_user.get("sub")
     if not user_id:
         raise HTTPException(status_code=403, detail="Invalid user")
@@ -262,11 +264,13 @@ async def generate_email_preview_endpoint(
         "Address": settings.YOUR_ZIP_CITY,
     }  # Fetch details
 
+    logger.info(f"getting email request for invoice: {invoice_id}")
     # 3. Generate Email Content
     try:
         email_content = await email_service.generate_invoice_email_content(
             invoice=invoice_db, email_request=email_request, your_details=your_details
         )
+        logger.info(f"Generated email content for invoice {invoice_id}")
         return email_content
     except Exception as e:
         logger.error(

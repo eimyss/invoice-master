@@ -16,6 +16,7 @@ class ClientInfo(BaseModel):
     address_city: Optional[str] = None
     address_country: Optional[str] = None
     vat_id: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
 class ProjectInfo(BaseModel):
@@ -143,19 +144,21 @@ class Invoice(InvoiceInDB):
 # --- Schema for Sending Email (simplified example) ---
 class InvoiceEmailRequest(BaseModel):
     recipient_email: EmailStr  # Usually client's email
-    subject: Optional[str] = "Your Invoice [Invoice Number]"
+    subject: Optional[str] = (
+        "Ihre Rechnung {{ InvoiceNumber }}"  # Changed [InvoiceNumber]
+    )
     body_template: Optional[str] = """
-Dear [Client Name],
+Dear {{ ClientName }},
 
-Please find attached your invoice [Invoice Number] for the amount of €[Total Amount].
+Please find attached your invoice {{ InvoiceNumber }} for the amount of €{{ TotalAmount | currency }}.
 
-Payment is due by [Due Date].
+Payment is due by {{ DueDate | date }}.
 
 Bank Details:
-[Your Bank Details]
+{{ YourBankDetails }}
 
 Thank you for your business!
 
 Best regards,
-[Your Name]
+{{ YourName }}
     """  # Example Jinja2-like template

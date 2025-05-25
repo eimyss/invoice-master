@@ -54,7 +54,7 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     # invoice stuff
-    YOUR_COMPANY_NAME: str = "Your Freelancer Name/Company"
+    YOUR_COMPANY_NAME: str = "yOUR Company GmbH"
     YOUR_ADDRESS_LINE1: str = "Your Street 123"
     YOUR_ZIP_CITY: str = "12345 Your City"
     YOUR_TAX_ID: Optional[str] = None  # Steuernummer
