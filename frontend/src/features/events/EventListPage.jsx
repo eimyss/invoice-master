@@ -36,9 +36,6 @@ const EventTable = ({ events, onViewEvent }) => {
         <thead className="bg-gray-50 dark:bg-gray-700">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-              Number
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
               Type
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
@@ -64,9 +61,6 @@ const EventTable = ({ events, onViewEvent }) => {
               key={event._id}
               className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                <Link to={`/events/${event._id}`}>{event.event_number}</Link>
-              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
                 {event.event_type || "N/A"}
               </td>
