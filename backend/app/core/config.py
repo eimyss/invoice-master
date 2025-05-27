@@ -3,6 +3,8 @@ import os
 import logging
 from pydantic import AnyHttpUrl, EmailStr, validator
 from pydantic_settings import BaseSettings
+
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Union, Optional
 import json
 
@@ -82,7 +84,12 @@ class Settings(BaseSettings):
 
     # --- New Setting for SSL Verification ---
     HTTPX_VERIFY_SSL: bool = True  # Default to True (verify SSL certs)
+    APP_VERSION: str = Field(
+        default="0.0.0-dev", description="Application version/build number"
+    )
+    # ...
 
+    # Log it on startup
     class Config:
         env_file = (
             env_file_path if env_file_path and os.path.exists(env_file_path) else None
@@ -93,6 +100,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+logger.info(f"--- Version: {settings.APP_VERSION} ---")
 logger.info(f"Project Name: {settings.PROJECT_NAME}")
 logger.info(f"MongoDB URL Host: {settings.MONGODB_URL.split('@')[-1].split('/')[0]}")
 logger.info(

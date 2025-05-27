@@ -56,6 +56,7 @@ const ThemeToggle = () => {
 const Layout = () => {
   // Destructure isAuthenticated and isLoading as well for clarity/checks
   const { userInfo, logout, isAuthenticated, isLoading } = useAuth();
+  const appVersion = import.meta.env.VITE_APP_VERSION || "N/A";
   const navigate = useNavigate();
   console.log(
     "Layout Render. isLoading:",
@@ -163,6 +164,9 @@ const Layout = () => {
         </nav>
         {/* Footer / User section */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          <div className="text-xs text-gray-400 dark:text-gray-500 p-2 text-center">
+            Version: {appVersion}
+          </div>
           <div className="flex items-center mb-3">
             <UserCircleIcon className="h-8 w-8 text-gray-500 dark:text-gray-400 mr-2" />
             {/* *** Use the safe displayUsername variable *** */}

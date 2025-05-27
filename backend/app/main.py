@@ -76,6 +76,11 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
+@app.get("/version", tags=["App Info"], response_model=dict)
+async def get_app_version():
+    return {"version": settings.APP_VERSION, "project_name": settings.PROJECT_NAME}
+
+
 @app.get("/", tags=["Root"])
 async def read_root():
     return {"message": f"Welcome to {settings.PROJECT_NAME}"}

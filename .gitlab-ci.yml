@@ -1,0 +1,153 @@
+# Use the official Docker image to build Docker images
+# You can use specific versions if needed
+image: docker:24.0.5 # Or a newer stable version
+
+variables:
+  # Define variables for your GitLab Container Registry
+  # CI_REGISTRY_IMAGE is a predefined GitLab CI variable
+  # e.g., registry.gitlab.com/your-username/rechnung-meister
+  BACKEND_IMAGE_TAG: $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA
+  FRONTEND_IMAGE_TAG: $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA
+  BACKEND_LATEST_TAG: $CI_REGISTRY_IMAGE/backend:latest
+  FRONTEND_LATEST_TAG: $CI_REGISTRY_IMAGE/frontend:latest
+  DOCKER_TLS_CERTDIR: "/certs" # Recommended for Docker-in-Docker
+
+stages:
+  - build
+  - test
+  - publish
+  # - deploy # Placeholder for deployment stage
+
+before_script:
+  # Log in to GitLab Container Registry
+  # CI_REGISTRY_USER and CI_REGISTRY_PASSWORD are predefined GitLab CI variables
+  - echo "Logging into GitLab Container Registry..."
+  #  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  - echo "Build Number/Version being used: $CI_COMMIT_SHORT_SHA"
+
+build_backend:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  script:
+    - echo "Building backend Docker image..."
+    - cd backend
+    - echo "${CI_PROJECT_DIR}"
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"$(echo -n $CI_DEPENDENCY_PROXY_SERVER | awk -F[:] '{print $1}')\":{\"auth\":\"$(printf "%s:%s" ${CI_DEPENDENCY_PROXY_USER} "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA"
+      --insecure
+    - echo "Backend image built and tagged: $BACKEND_IMAGE_TAG and $BACKEND_LATEST_TAG"
+
+build_frontend:
+  stage: build
+  image: arm64v8/node:latest
+  script:
+    - echo "Building frontend Docker image..."
+    - cd frontend
+    # Build the image, passing VITE_APP_VERSION as a build argument
+    # This build arg will be used by the Dockerfile
+    - npm install
+    - npm run build
+    - echo "Frontend image built and tagged: $FRONTEND_IMAGE_TAG and $FRONTEND_LATEST_TAG"
+
+build_frontend_docker:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  script:
+    - echo "${CI_REGISTRY}"
+    - echo "${CI_REGISTRY_USER}"
+    - echo "${CI_DEPENDENCY_PROXY_SERVER}"
+    - echo "${CI_REGISTRY_IMAGE}"
+    - echo "${CI_PROJECT_DIR}"
+    - cd frontend
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"$(echo -n $CI_DEPENDENCY_PROXY_SERVER | awk -F[:] '{print $1}')\":{\"auth\":\"$(printf "%s:%s" ${CI_DEPENDENCY_PROXY_USER} "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA"
+      --insecure
+
+# --- Placeholder for Test Stage ---
+# You would add your backend and frontend test jobs here
+# Example:
+run_backend_tests:
+  stage: test
+  image: python:3.11 # Or your specific Python version
+  before_script:
+    - cd backend
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install -r requirements.txt -r requirements-dev.txt
+    # Setup test DB if needed (e.g., start a mongo service in the job)
+  script:
+    - echo "Running backend tests..."
+    - pytest
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+
+run_frontend_tests:
+  stage: test
+  image: node:18 # Or your specific Node version
+  before_script:
+    - cd frontend
+    - npm install
+  script:
+    - echo "Running frontend tests..."
+    - npm test -- --run # Use --run for Vitest to exit after tests
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+# ---------------------------------
+
+deploy_backend:
+  stage: deploy
+  needs: [build_backend] # Depends on successful build
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script:
+    - echo "Pushing backend image to GitLab Registry..."
+    - kubectl set image deployment backend finances-back=${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA -n apps
+    - echo "Backend image pushed."
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "merge_request_event"' # Only push on merges to default branch
+
+publish_frontend:
+  stage: publish
+  needs: [build_frontend] # Depends on successful build
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script:
+    - echo "Pushing frontend image to GitLab Registry..."
+    - kubectl set image deployment backend finances-back=${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA -n apps
+    - echo "Frontend image pushed."
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "merge_request_event"' # Only push on merges to default branch
+
+# --- Placeholder for Deploy Stage ---
+# deploy_to_k8s:
+#   stage: deploy
+#   image: google/cloud-sdk:alpine # Or your kubectl/helm image
+#   needs: [publish_backend, publish_frontend]
+#   script:
+#     - echo "Deploying to Kubernetes..."
+#     # - gcloud auth activate-service-account --key-file $GCP_SA_KEY (if deploying to GKE)
+#     # - gcloud container clusters get-credentials YOUR_CLUSTER --zone YOUR_ZONE --project YOUR_PROJECT
+#     # - kubectl set image deployment/backend-deployment backend=$BACKEND_IMAGE_TAG -n your-namespace
+#     # - kubectl set image deployment/frontend-deployment frontend=$FRONTEND_IMAGE_TAG -n your-namespace
+#     # Or using Helm:
+#     # - helm upgrade --install rechnung-meister ./charts/rechnung-meister --set backend.image.tag=$CI_COMMIT_SHORT_SHA --set frontend.image.tag=$CI_COMMIT_SHORT_SHA -n your-namespace
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "merge_request_event"'
+#   environment:
+#     name: production # Or staging
+#     url: https://your-app-domain.com # If you have one
+# ------------------------------------
