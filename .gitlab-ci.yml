@@ -108,6 +108,8 @@ run_backend_tests:
     # Setup test DB if needed (e.g., start a mongo service in the job)
   script:
     - echo "Running backend tests..."
+    - echo "URL is $AUTHENTIK_URL"
+    - echo "CI_URL is $CI_AUTHENTIK_URL"
     - python -m pytest
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
