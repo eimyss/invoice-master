@@ -23,7 +23,7 @@ before_script:
   # CI_REGISTRY_USER and CI_REGISTRY_PASSWORD are predefined GitLab CI variables
   - echo "Logging into GitLab Container Registry..."
   #  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-  - echo "Build Number/Version being used: $CI_COMMIT_SHORT_SHA"
+  - echo "Build Number/Version being used $CI_COMMIT_SHORT_SHA"
 
 build_backend:
   stage: build
@@ -40,7 +40,7 @@ build_backend:
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA"
       --insecure
-    - echo "Backend image built and tagged: $BACKEND_IMAGE_TAG and $BACKEND_LATEST_TAG"
+    - echo "Backend image built and tagged $BACKEND_IMAGE_TAG and $BACKEND_LATEST_TAG"
 
 build_frontend:
   stage: build
@@ -52,7 +52,7 @@ build_frontend:
     # This build arg will be used by the Dockerfile
     - npm install
     - npm run build
-    - echo "Frontend image built and tagged: $FRONTEND_IMAGE_TAG and $FRONTEND_LATEST_TAG"
+    - echo "Frontend image built and tagged $FRONTEND_IMAGE_TAG and $FRONTEND_LATEST_TAG"
 
 build_frontend_docker:
   stage: build
