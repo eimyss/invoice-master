@@ -87,7 +87,7 @@ run_backend_tests:
     # Setup test DB if needed (e.g., start a mongo service in the job)
   script:
     - echo "Running backend tests..."
-    - pytest
+    - python -m pytest
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"

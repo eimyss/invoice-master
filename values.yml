@@ -1,0 +1,27 @@
+backend:
+  image:
+    repository: registry.gitlab.com/your-group/your-project/backend
+    tag: latest
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8000
+  ingress:
+    enabled: true
+    host: backend.example.com
+    path: /
+
+frontend:
+  image:
+    repository: registry.gitlab.com/your-group/your-project/frontend
+    tag: latest
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 8080
+  ingress:
+    enabled: true
+    host: frontend.example.com
+    path: /
+
+namespace: apps
