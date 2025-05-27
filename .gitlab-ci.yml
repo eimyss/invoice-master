@@ -30,7 +30,7 @@ variables:
                  # Pydantic-settings should then only use actual env vars.
 
     # --- Crucial for Python Path ---
-    PYTHONPATH: "."
+  PYTHONPATH: "."
   DOCKER_TLS_CERTDIR: "/certs" # Recommended for Docker-in-Docker
 
 stages:
