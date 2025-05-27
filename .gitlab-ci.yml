@@ -106,8 +106,8 @@ run_frontend_tests:
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
 # ---------------------------------
 
-deploy_backend:
-  stage: deploy
+publish_backend:
+  stage: publish
   needs: [build_backend] # Depends on successful build
   image:
     name: bitnami/kubectl:latest
