@@ -13,15 +13,15 @@ variables:
   # --- Pass necessary ENV VARS from GitLab CI to the test job ---
   # These are GitLab CI Variables you've set in your project's settings.
   # The names here (e.g., MONGODB_URL) must match what your config.py expects.
-  MONGODB_URL: $CI_TEST_MONGODB_URL # Example: use a specific test DB URL from GitLab Vars
+  MONGODB_URL: "http://localhost:8080"
   SECRET_KEY: $CI_SECRET_KEY
-  AUTHENTIK_URL: $CI_AUTHENTIK_URL_TEST
-  AUTHENTIK_JWKS_URI: $CI_AUTHENTIK_JWKS_URI_TEST
-  AUTHENTIK_TOKEN_URL: $CI_AUTHENTIK_TOKEN_URL_TEST
-  AUTHENTIK_ISSUER: $CI_AUTHENTIK_ISSUER_TEST
-  AUTHENTIK_AUDIENCE: $CI_AUTHENTIK_AUDIENCE_TEST
-  VITE_AUTHENTIK_REDIRECT_URI: $CI_VITE_AUTHENTIK_REDIRECT_URI_TEST # If backend config needs it
-  HTTPX_VERIFY_SSL: $CI_HTTPX_VERIFY_SSL_TEST # e.g., "False" or "True"
+  AUTHENTIK_URL: $CI_AUTHENTIK_URL
+  AUTHENTIK_JWKS_URI: $CI_AUTHENTIK_JWKS_URI
+  AUTHENTIK_TOKEN_URL: $CI_AUTHENTIK_TOKEN_URL
+  AUTHENTIK_ISSUER: $CI_AUTHENTIK_ISSUER
+  AUTHENTIK_AUDIENCE: $CI_AUTHENTIK_AUDIENCE
+  VITE_AUTHENTIK_REDIRECT_URI: $CI_VITE_AUTHENTIK_REDIRECT_URI
+  HTTPX_VERIFY_SSL: $CI_HTTPX_VERIFY_SSL
   APP_VERSION: $CI_COMMIT_SHORT_SHA # If your app needs it during tests
   # Add ALL other environment variables your backend config.py requires
   # The default value of APP_ENV_FILE is '.env.local', which won't be found.
